@@ -9,6 +9,19 @@
 [Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
+[Aa]rt/
+[Aa]nimations/
+[Aa]udio/
+[Pp]arrel[Ss]ync/
+[Pp]lugins/
+[Rr]esources/
+[Ss]cenes/
+[Tt]ext[Mm]esh[Pp]ro/
+[Pp]ackages/
+[Rr]enderer/
+[Pp]roject[Ss]ettings/
+[Ss]haders/
+[Ss]ettings/
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
