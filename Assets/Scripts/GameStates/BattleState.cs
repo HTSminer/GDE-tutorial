@@ -8,27 +8,28 @@ public class BattleState : State<GameController>
 {
     [SerializeField] BattleSystem battleSystem;
 
+    public static BattleState i { get; private set; }
+    private void Awake() => i = this;
+
     // Inputs
     public BattleTrigger trigger { get; set; }
     public TrainerController trainer { get; set; }
 
-    public static BattleState i { get; private set; }
+    // References
+    private GameController _gameController;
 
-    private void Awake() => i = this;
-
-    GameController gc;
     public override void Enter(GameController owner)
     {
-        gc = owner;
+        _gameController = owner;
 
         battleSystem.gameObject.SetActive(true);
-        gc.WorldCamera.gameObject.SetActive(false);
+        _gameController.WorldCamera.gameObject.SetActive(false);
 
-        var playerParty = gc.PlayerController.GetComponent<PokemonParty>();
+        var playerParty = _gameController.PlayerController.GetComponent<PokemonParty>();
 
         if (trainer == null)
         {
-            var wildPokemon = gc.CurrentScene.GetComponent<MapArea>().GetRandomWildPokemon(trigger);
+            var wildPokemon = _gameController.CurrentScene.GetComponent<MapArea>().GetRandomWildPokemon(trigger);
             var wildPokemonCopy = new Pokemon(wildPokemon.Base, wildPokemon.Level);
             StartCoroutine(battleSystem.StartBattle(playerParty, wildPokemonCopy, trigger));
         }
@@ -46,12 +47,12 @@ public class BattleState : State<GameController>
     public override void Exit()
     {
         battleSystem.gameObject.SetActive(false);
-        gc.WorldCamera.gameObject.SetActive(true);
+        _gameController.WorldCamera.gameObject.SetActive(true);
 
         battleSystem.OnBattleOver -= EndBattle;
     }
 
-    void EndBattle(bool won)
+    private void EndBattle(bool won)
     {
         if (trainer != null && won == true)
         {
@@ -59,7 +60,7 @@ public class BattleState : State<GameController>
             trainer = null;
         }
 
-        gc.StateMachine.Pop();
+        _gameController.StateMachine.Pop();
     }
 
     public BattleSystem BattleSystem => battleSystem;

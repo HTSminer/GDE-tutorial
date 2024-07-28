@@ -5,8 +5,12 @@ using UnityEngine;
 
 public class AbilityDB
 {
+    private static BattleSystem _battleSystem;
+
     public static void Init()
     {
+        _battleSystem = GameController.i.BattleSystem;
+
         foreach (var kvp in Abilities)
         {
             var abilityId = kvp.Key;
@@ -50,7 +54,7 @@ public class AbilityDB
                 Name = "Drizzle",
                 OnPokemonEnter = (Pokemon source, Pokemon target) =>
                 {
-                    var field = GameController.i.BattleSystem.Field;
+                    var field = _battleSystem.Field;
 
                     field.WeatherDuration = 5;
                     field.SetWeather(source, ConditionID.rain);
@@ -151,9 +155,14 @@ public class AbilityDB
                 Name = "Sand Veil",
                 OnModifyAcc = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
                 {
-                    if (GameController.i.BattleSystem.Field.Weather.Id == ConditionID.sandstorm)
-                        acc = acc * .8f;
-                        Debug.Log($"Sand Veil boost");
+                    if (_battleSystem.Field.Weather != null)
+                    {
+                        if (_battleSystem.Field.Weather.Id == ConditionID.sandstorm)
+                        {
+                            acc = acc * .8f;
+                            Debug.Log($"Sand Veil boost");
+                        }
+                    }
 
                     return acc;
                 },

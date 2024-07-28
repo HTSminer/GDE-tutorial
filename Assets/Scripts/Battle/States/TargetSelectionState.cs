@@ -9,33 +9,28 @@ public class TargetSelectionState : State<BattleSystem>
 {
     [SerializeField] TargetSelectionUI selectionUI;
 
-    private int currentTarget = 0;
-
     public static TargetSelectionState i { get; private set; }
-
     private void Awake() => i = this;
 
-    BattleSystem bs;
-    ActionSelectionState actionState;
+    private int currentTarget = 0;
+
+    // References
+    private BattleSystem _battleSystem;
+    private ActionSelectionState _actionState;
+
     public override void Enter(BattleSystem owner)
     {
-        bs = owner;
-        actionState = bs.GetComponent<ActionSelectionState>();
+        _battleSystem = owner;
+        _actionState = _battleSystem.GetComponent<ActionSelectionState>();
         currentTarget = 0;
     }
 
-    public override void Execute()
-    {
-        HandleSelection();
-    }
+    public override void Execute() => HandleSelection();
 
     public override void Exit()
     {
-        actionState.SelectionUI.SelectedItem = 0;
-        actionState.SelectionUI.gameObject.SetActive(false);
-        bs.EnemyUnits[currentTarget].SetSelected(false);
-
-        StartCoroutine(actionState.GoToMoveSelection());
+        _battleSystem.EnemyUnits[currentTarget].SetSelected(false);
+        _actionState.ActionIndex++;
     }
 
     private void HandleSelection()
@@ -45,32 +40,31 @@ public class TargetSelectionState : State<BattleSystem>
         else if (Input.GetKeyDown(KeyCode.A))
             --currentTarget;
 
-        currentTarget = Mathf.Clamp(currentTarget, 0, bs.EnemyUnits.Count - 1);
+        currentTarget = Mathf.Clamp(currentTarget, 0, _battleSystem.EnemyUnits.Count - 1);
 
-        for (int i = 0; i < bs.EnemyUnits.Count; i++)
+        for (int i = 0; i < _battleSystem.EnemyUnits.Count; i++)
         {
-            bs.EnemyUnits[i].SetSelected(i == currentTarget);
+            _battleSystem.EnemyUnits[i].SetSelected(i == currentTarget);
         }
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            bs.EnemyUnits[currentTarget].SetSelected(false);
-
             var action = new BattleAction()
             {
                 Type = ActionType.Move,
-                User = bs.CurrentUnit,
-                Target = bs.EnemyUnits[currentTarget],
-                Move = bs.CurrentUnit.Pokemon.Moves[bs.SelectedMove]
+                User = _battleSystem.CurrentUnit,
+                Target = _battleSystem.EnemyUnits[currentTarget],
+                Move = _battleSystem.CurrentUnit.Pokemon.CurrentMove
             };
 
-            StartCoroutine(ActionSelectionState.i.AddBattleAction(action));
-            ActionSelectionState.i.ActionIndex++;
-            bs.StateMachine.Pop();
+            _battleSystem.StateMachine.Pop();
+            _actionState.ActionIndex = Mathf.Clamp(_actionState.ActionIndex++, 0, _battleSystem.UnitCount - 1);
+            StartCoroutine(_actionState.AddBattleAction(action));
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {
-            bs.EnemyUnits[currentTarget].SetSelected(false);
+            _battleSystem.EnemyUnits[currentTarget].SetSelected(false);
+            _battleSystem.StateMachine.Pop();
         }
     }
 }

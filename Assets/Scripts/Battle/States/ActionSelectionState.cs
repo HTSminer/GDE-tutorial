@@ -7,43 +7,39 @@ using UnityEngine;
 
 public class ActionSelectionState : State<BattleSystem>
 {
-    [SerializeField] ActionSelectionUI selectionUI;
-
-    public ActionSelectionUI SelectionUI
-    {
-        get => selectionUI;
-        set => selectionUI = value;
-    }
-
-    public int ActionIndex { get; set; }
+    [SerializeField] ActionSelectionUI actionSelection;
 
     public static ActionSelectionState i { get; private set; }
-
     private void Awake() => i = this;
 
-    BattleSystem bs;
+    // Outputs
+    public int ActionIndex { get; set; }
+
+    // References
+    private BattleSystem _battleSystem;
+
     public override void Enter(BattleSystem owner)
     {
-        bs = owner;
+        _battleSystem = owner;
 
-        selectionUI.SelectedItem = 0;
-        selectionUI.gameObject.SetActive(true);
-        selectionUI.OnSelected += OnActionSelected; 
+        actionSelection.SelectedItem = 0;
+        actionSelection.gameObject.SetActive(true);
+        actionSelection.OnSelected += OnActionSelected; 
         
-        bs.CurrentUnit = bs.PlayerUnits[ActionIndex];
-
-        bs.DialogBox.SetDialog($"Choose an action for {bs.CurrentUnit.Pokemon.Base.Name}");
+        _battleSystem.CurrentUnit = _battleSystem.PlayerUnits[ActionIndex];
+        _battleSystem.DialogBox.SetDialog($"Choose an action for {_battleSystem.PlayerUnits[ActionIndex].Pokemon.Base.Name}");
     }
 
-    public override void Execute() => selectionUI.HandleUpdate();
+    public override void Execute() => actionSelection.HandleUpdate();
 
     public override void Exit()
     {
-        selectionUI.gameObject.SetActive(false);
-        selectionUI.OnSelected -= OnActionSelected;
+        actionSelection.gameObject.SetActive(false);
+        actionSelection.OnSelected -= OnActionSelected;
+        ActionIndex = 0;
     }
 
-    void OnActionSelected(int selection)
+    private void OnActionSelected(int selection)
     {
         switch (selection)
         {
@@ -61,39 +57,67 @@ public class ActionSelectionState : State<BattleSystem>
                 break;
         }
 
-        selectionUI.SelectedItem = 0;
+        actionSelection.SelectedItem = 0;
     }
 
-    IEnumerator GoToRunAway()
+    private IEnumerator GoToRunAway()
     {
         var action = new BattleAction()
         {
             Type = ActionType.Run,
-            User = bs.CurrentUnit
+            User = _battleSystem.CurrentUnit
         };
 
-        bs.Actions.Add(action);
+        _battleSystem.Actions.Add(action);
 
-        yield return bs.StateMachine.PushAndWait(RunTurnState.i);
+        yield return _battleSystem.StateMachine.PushAndWait(RunTurnState.i);
     }
 
     public IEnumerator GoToMoveSelection()
     {
-        // Adding comments to test source control
-        bs.CurrentUnit = bs.PlayerUnits[ActionIndex];
-        bs.DialogBox.SetDialog($"Choose an action for {bs.CurrentUnit.Pokemon.Base.Name}");
-        MoveSelectionState.i.Moves = bs.CurrentUnit.Pokemon.Moves;
-        yield return bs.StateMachine.PushAndWait(MoveSelectionState.i);
+        actionSelection.gameObject.SetActive(false);
+
+        yield return _battleSystem.StateMachine.PushAndWait(MoveSelectionState.i);
+        var selectedMove = MoveSelectionState.i.Moves[MoveSelectionState.i.SelectedMove];
+        if (selectedMove != null)
+        {
+            _battleSystem.SelectedAction = ActionType.Move;
+            _battleSystem.CurrentUnit.Pokemon.CurrentMove = selectedMove;
+
+            if (_battleSystem.UnitCount > 1)
+            {
+                yield return _battleSystem.StateMachine.PushAndWait(TargetSelectionState.i);
+
+                var currentUnit = _battleSystem.PlayerUnits[ActionIndex];
+                _battleSystem.CurrentUnit = currentUnit;
+
+                _battleSystem.DialogBox.SetDialog($"Choose an action for {currentUnit.Pokemon.Base.Name}");
+                actionSelection.SelectedItem = 0;
+                actionSelection.gameObject.SetActive(true);
+            }
+            else
+            {
+                var action = new BattleAction()
+                {
+                    Type = ActionType.Move,
+                    User = _battleSystem.CurrentUnit,
+                    Target = _battleSystem.EnemyUnits[0],
+                    Move = selectedMove
+                };
+
+                yield return AddBattleAction(action);
+            }
+        }
     }
 
-    IEnumerator GoToPartyState()
+    private IEnumerator GoToPartyState()
     {
         yield return GameController.i.StateMachine.PushAndWait(PartyState.i);
         var selectedPokemon = PartyState.i.SelectedPokemon;
         if (selectedPokemon != null)
         {
-            bs.SelectedAction = ActionType.SwitchPokemon;
-            bs.SelectedPokemon = selectedPokemon;
+            _battleSystem.SelectedAction = ActionType.SwitchPokemon;
+            _battleSystem.SelectedPokemon = selectedPokemon;
 
             var action = new BattleAction()
             {
@@ -106,13 +130,13 @@ public class ActionSelectionState : State<BattleSystem>
         }
     }
 
-    IEnumerator GoToInventoryState()
+    private IEnumerator GoToInventoryState()
     {
         yield return GameController.i.StateMachine.PushAndWait(InventoryState.i);
         var selectedItem = InventoryState.i.SelectedItem;
         if (selectedItem != null)
         {
-            bs.SelectedItem = selectedItem;
+            _battleSystem.SelectedItem = selectedItem;
 
             var action = new BattleAction()
             {
@@ -126,28 +150,28 @@ public class ActionSelectionState : State<BattleSystem>
 
     public IEnumerator AddBattleAction(BattleAction action)
     {
-        bs.Actions.Add(action);
+        _battleSystem.Actions.Add(action);
 
-        if (bs.Actions.Count == bs.UnitCount)
+        if (_battleSystem.Actions.Count == _battleSystem.UnitCount)
         {
-            foreach (var enemyUnit in bs.EnemyUnits)
+            foreach (var enemyUnit in _battleSystem.EnemyUnits)
             {
                 // Enemy Unit selects it's move then ADDs it to the Action List.
                 var randAction = new BattleAction()
                 {
                     Type = ActionType.Move,
                     User = enemyUnit,
-                    Target = bs.PlayerUnits[UnityEngine.Random.Range(0, bs.PlayerUnits.Count)],
+                    Target = _battleSystem.PlayerUnits[UnityEngine.Random.Range(0, _battleSystem.PlayerUnits.Count)],
                     Move = enemyUnit.Pokemon.GetRandomMove()
                 };
 
-                bs.Actions.Add(randAction);
+                _battleSystem.Actions.Add(randAction);
             }
 
             ActionIndex = 0;
 
-            bs.Actions = bs.Actions.OrderByDescending(a => a.Priority).ThenByDescending(a => a.User.Pokemon.Speed).ToList();
-            yield return bs.StateMachine.PushAndWait(RunTurnState.i);
+            _battleSystem.Actions = _battleSystem.Actions.OrderByDescending(a => a.Priority).ThenByDescending(a => a.User.Pokemon.Speed).ToList();
+            yield return _battleSystem.StateMachine.PushAndWait(RunTurnState.i);
         }
     }
 }

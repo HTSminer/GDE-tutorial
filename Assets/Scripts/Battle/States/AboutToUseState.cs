@@ -8,33 +8,34 @@ public enum Choice {  Yes, No }
 
 public class AboutToUseState : State<BattleSystem>
 {
-    // Inputs
-    public Pokemon NewPokemon { get; set; }
-    public BattleUnit UnitToSwitch { get; set; }
+    public static AboutToUseState i { get; private set; }
+    private void Awake() => i = this;
 
     private Choice playerChoice = Choice.No;
 
-    //bool aboutToUseChoice;
-    public static AboutToUseState i { get; private set; }
+    // Inputs
+    public Pokemon NewPokemon { get; set; }
 
-    private void Awake() => i = this;
+    // References
+    private BattleSystem _battleSystem;
 
-    BattleSystem bs;
     public override void Enter(BattleSystem owner)
     {
-        bs = owner;
+        _battleSystem = owner;
         StartCoroutine(StartState());
     }
 
-    IEnumerator StartState()
+    public override void Execute() => StartCoroutine(HandleInput());
+
+    private IEnumerator StartState()
     {
-        yield return bs.DialogBox.TypeDialog($"{bs.Trainer.Name} is about to use {NewPokemon.Base.Name}. Do you want to change Pokemon?");
-        bs.DialogBox.EnableChoiceBox(true);
+        yield return _battleSystem.DialogBox.TypeDialog($"{_battleSystem.Trainer.Name} is about to use {NewPokemon.Base.Name}. Do you want to change Pokemon?");
+        _battleSystem.DialogBox.EnableChoiceBox(true);
     }
 
     private IEnumerator HandleInput()
     {
-        if (!bs.DialogBox.IsChoiceBoxEnabled)
+        if (!_battleSystem.DialogBox.IsChoiceBoxEnabled)
             yield break;
 
         if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
@@ -51,7 +52,7 @@ public class AboutToUseState : State<BattleSystem>
 
     private IEnumerator HandleChoice(Choice choice)
     {
-        bs.DialogBox.EnableChoiceBox(false);
+        _battleSystem.DialogBox.EnableChoiceBox(false);
         AudioManager.i.PlaySfx(AudioID.UISelect);
 
         if (choice == Choice.Yes)
@@ -60,21 +61,19 @@ public class AboutToUseState : State<BattleSystem>
             yield return ContinueBattle();
     }
 
-    public override void Execute() => HandleInput();
-
     IEnumerator SwitchAndContinueBattle()
     {
         yield return GameController.i.StateMachine.PushAndWait(PartyState.i);
         var selectedPokemon = PartyState.i.SelectedPokemon;
         if (selectedPokemon != null)
-            yield return bs.SwitchPokemon(bs.CurrentUnit, selectedPokemon);
+            yield return _battleSystem.SwitchPokemon(_battleSystem.CurrentUnit, selectedPokemon);
 
         yield return ContinueBattle();
     }
 
     IEnumerator ContinueBattle()
     {
-        yield return bs.SendNextTrainerPokemon();
-        bs.StateMachine.Pop();
+        yield return _battleSystem.SendNextTrainerPokemon();
+        _battleSystem.StateMachine.Pop();
     }
 }

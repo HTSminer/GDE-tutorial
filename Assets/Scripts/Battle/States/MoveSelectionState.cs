@@ -12,36 +12,41 @@ public class MoveSelectionState : State<BattleSystem>
     [SerializeField] GameObject moveDetailsUI;
     [SerializeField] GameObject megaEvoUI;
 
-    public bool CanMega { get; private set; }
-
-    public Pokemon pokemon { get; private set; } 
-    public Forms mega { get; private set; }
-
-    // Inputs
-    public List<Move> Moves { get; set; }
-
     public static MoveSelectionState i { get; private set; }
-
     private void Awake() => i = this;
 
-    BattleSystem _battleSystem;
+    private bool canMega;
+
+    // Outputs
+    public List<Move> Moves { get; private set; }
+    public int SelectedMove { get; private set; }
+
+    // References
+    private Pokemon _pokemon;
+    private Forms _forms;
+    private BattleSystem _battleSystem;
+    private ActionSelectionState actionState;
+
     public override void Enter(BattleSystem battleSystem)
     {
         _battleSystem = battleSystem;
         _battleSystem.DialogBox.EnableDialogText(false);
 
+        actionState = _battleSystem.GetComponent<ActionSelectionState>();
+
         moveSelector.gameObject.SetActive(true);
         moveDetailsUI.SetActive(true);
-        moveSelector.SetMoves(_battleSystem.PlayerUnits[0].Pokemon.Moves);
+        moveSelector.SetMoves(_battleSystem.PlayerUnits[actionState.ActionIndex].Pokemon.Moves);
+        Moves = _battleSystem.CurrentUnit.Pokemon.Moves;
 
         moveSelector.OnSelected += OnMoveSelected;
         moveSelector.OnBack += OnBack;
 
-        pokemon = _battleSystem.CurrentUnit.Pokemon;
-        mega = pokemon.CheckForMega(pokemon.HeldItem);
+        _pokemon = _battleSystem.CurrentUnit.Pokemon;
+        _forms = _pokemon.CheckForMega(_pokemon.HeldItem);
     }
 
-    public override void Execute() => StartCoroutine(HandleUpdate());
+    public override void Execute() => HandleSelection();
 
     public override void Exit()
     {
@@ -55,80 +60,62 @@ public class MoveSelectionState : State<BattleSystem>
         moveSelector.ClearItems();
     }
 
-    public IEnumerator HandleUpdate()
+    private void OnMoveSelected(int selected)
     {
-        if (pokemon.Base.Forms.Count > 0)
-        {
-            if (!pokemon.isMega && Input.GetKeyDown(KeyCode.LeftShift))
-                megaEvoUI.SetActive(ToggleMegaEvo(CanMega, pokemon, mega));
-            else if (CanMega && Input.GetKeyDown(KeyCode.Z))
-            {
-                _battleSystem.PokemonBeforeMega = pokemon;
-
-                moveSelector.gameObject.SetActive(false);
-                moveDetailsUI.SetActive(false);
-                _battleSystem.DialogBox.EnableDialogText(true);
-
-                pokemon.isMega = true;
-                CanMega = false;
-
-                megaEvoUI.SetActive(CanMega);
-
-                yield return _battleSystem.DialogBox.TypeDialog($"{pokemon.Base.Name}'s {pokemon.HeldItem.Name} is reacting to the Mega Bracelet!");
-                yield return _battleSystem.CurrentUnit.MegaEvolve(mega);
-                yield return _battleSystem.DialogBox.TypeDialog($"{pokemon.Base.Name} Mega Evolved!.");
-                if (pokemon.isMega) _battleSystem.CurrentUnit.Hud.MegaIcon.gameObject.SetActive(true);
-
-                _battleSystem.StateMachine.Pop();
-            }
-        }
-        else
-            moveSelector.HandleUpdate();
-    }
-
-    void OnMoveSelected(int selected)
-    {
-        moveSelector.gameObject.SetActive(false);
-        moveDetailsUI.SetActive(false);
-        _battleSystem.DialogBox.EnableDialogText(true);
-
-        var selectedMove = Moves[selected];
-        if (selectedMove != null)
-        {
-            _battleSystem.SelectedAction = ActionType.Move;
-            _battleSystem.CurrentUnit.Pokemon.CurrentMove = selectedMove;
-
-            if (_battleSystem.UnitCount > 1)
-            {
-                StartCoroutine(_battleSystem.StateMachine.PushAndWait(TargetSelectionState.i));
-            }
-            else
-            {
-                var action = new BattleAction()
-                {
-                    Type = ActionType.Move,
-                    User = _battleSystem.CurrentUnit,
-                    Target = _battleSystem.EnemyUnits[0],
-                    Move = selectedMove
-                };
-                StartCoroutine(ActionSelectionState.i.AddBattleAction(action));
-                ActionSelectionState.i.ActionIndex = Mathf.Clamp(ActionSelectionState.i.ActionIndex++, 0, _battleSystem.UnitCount);
-            }
-        }
+        SelectedMove = selected;
+        _battleSystem.StateMachine.Pop();
     }
     
-    void OnBack() => _battleSystem.StateMachine.Pop();
+    private void OnBack() => _battleSystem.StateMachine.Pop();
 
-    bool ToggleMegaEvo(bool evo, Pokemon pokemon, Forms mega)
+    public void HandleSelection()
+    {
+        if (_pokemon.Base.Forms.Count > 0)
+        {
+            StartCoroutine(HandleMega());
+        }
+        else
+        {
+            moveSelector.HandleUpdate();
+        }
+    }
+
+    private IEnumerator HandleMega()
+    {
+        if (!_pokemon.isMega && Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            megaEvoUI.SetActive(ToggleMegaEvo(canMega));
+        }
+        else if (canMega && Input.GetKeyDown(KeyCode.Z))
+        {
+            moveSelector.gameObject.SetActive(false);
+            moveDetailsUI.SetActive(false);
+            _battleSystem.DialogBox.EnableDialogText(true);
+
+            _battleSystem.PokemonBeforeMega = _pokemon;
+            _pokemon.isMega = true;
+            canMega = false;
+            megaEvoUI.SetActive(canMega);
+
+            yield return _battleSystem.DialogBox.TypeDialog($"{_pokemon.Base.Name}'s {_pokemon.HeldItem.Name} is reacting to the Mega Bracelet!");
+            yield return _battleSystem.CurrentUnit.MegaEvolve(_forms);
+            yield return _battleSystem.DialogBox.TypeDialog($"{_pokemon.Base.Name} Mega Evolved!.");
+            if (_pokemon.isMega) _battleSystem.CurrentUnit.Hud.MegaIcon.gameObject.SetActive(true);
+
+            _battleSystem.StateMachine.Pop();
+        }
+    }
+
+    private bool ToggleMegaEvo(bool evo)
     {
         if (!evo)
         {
-            CanMega = true;
+            canMega = true;
             megaEvoUI.GetComponent<TMP_Text>().color = Color.red;
         }
         else
-            CanMega = false;
+            canMega = false;
 
-        return CanMega;
+        return canMega;
     }
 }

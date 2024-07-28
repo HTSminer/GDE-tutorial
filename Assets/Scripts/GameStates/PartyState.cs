@@ -10,23 +10,27 @@ public class PartyState : State<GameController>
 {
     [SerializeField] PartyScreen partyScreen;
 
-    public Pokemon SelectedPokemon { get; private set; }
-
-    bool isMovingPokemon;
-    int selectedIndexForMoving = 0;
-
     public static PartyState i { get; private set; }
-    public static event Action<Pokemon> OnPokemonSelected;
-
     private void Awake() => i = this;
 
-    PokemonParty playerParty;
-    private void Start() => playerParty = PlayerController.i.GetComponent<PokemonParty>();
+    private bool isMovingPokemon;
+    private int selectedIndexForMoving = 0;
 
-    GameController gc;
+    // Outputs
+    public Pokemon SelectedPokemon { get; private set; }
+
+    // References
+    private GameController _gameController;
+    private PokemonParty _playerParty;
+
+    // Events
+    public static event Action<Pokemon> OnPokemonSelected;
+
+    private void Start() => _playerParty = PlayerController.i.GetComponent<PokemonParty>();
+
     public override void Enter(GameController owner)
     {
-        gc = owner;
+        _gameController = owner;
 
         SelectedPokemon = null;
         partyScreen.gameObject.SetActive(true);
@@ -43,26 +47,26 @@ public class PartyState : State<GameController>
         partyScreen.OnBack -= OnBack;
     }
 
-    void OnPokemonSelectedInternal(int selection)
+    private void OnPokemonSelectedInternal(int selection)
     {
         SelectedPokemon = partyScreen.SelectedMember;
         StartCoroutine(PokemonSelectedAction(selection));
     }
 
-    IEnumerator PokemonSelectedAction(int selectedPokemonIndex)
+    private IEnumerator PokemonSelectedAction(int selectedPokemonIndex)
     {
-        var prevState = gc.StateMachine.GetPrevState();
+        var prevState = _gameController.StateMachine.GetPrevState();
         if (prevState == InventoryState.i)
         {
             // Use Item
-            StartCoroutine(GoToUseItemState());
+            yield return GoToUseItemState();
         }
         else if (prevState == BattleState.i)
         {
             var battleState = prevState as BattleState;
 
             DynamicMenuState.i.MenuItems = new List<string>() { "Switch", "Summary", "Cancel" };
-            yield return gc.StateMachine.PushAndWait(DynamicMenuState.i);
+            yield return _gameController.StateMachine.PushAndWait(DynamicMenuState.i);
             if (DynamicMenuState.i.SelectedItem == 0)
             {
                 // Switch Pokemon
@@ -84,15 +88,15 @@ public class PartyState : State<GameController>
                     SelectedPokemon = SelectedPokemon
                 };
 
-                ActionSelectionState.i.AddBattleAction(action);
+                yield return ActionSelectionState.i.AddBattleAction(action);
 
-                gc.StateMachine.Pop();
+                _gameController.StateMachine.Pop();
             }
             else if (DynamicMenuState.i.SelectedItem == 1)
             {
                 // Summary
                 SummaryState.i.SelectedPokemon = selectedPokemonIndex;
-                yield return gc.StateMachine.PushAndWait(SummaryState.i);
+                yield return _gameController.StateMachine.PushAndWait(SummaryState.i);
             }
             else
             {
@@ -114,23 +118,23 @@ public class PartyState : State<GameController>
 
                 isMovingPokemon = false;
 
-                var tmpPokemon = playerParty.Pokemons[selectedIndexForMoving];
-                playerParty.Pokemons[selectedIndexForMoving] = playerParty.Pokemons[selectedPokemonIndex];
-                playerParty.Pokemons[selectedPokemonIndex] = tmpPokemon;
-                playerParty.PartyUpdated();
+                var tmpPokemon = _playerParty.Pokemons[selectedIndexForMoving];
+                _playerParty.Pokemons[selectedIndexForMoving] = _playerParty.Pokemons[selectedPokemonIndex];
+                _playerParty.Pokemons[selectedPokemonIndex] = tmpPokemon;
+                _playerParty.PartyUpdated();
 
                 yield break;
             }
 
             DynamicMenuState.i.MenuItems = new List<string>() { select, move, "Cancel" };
 
-            yield return gc.StateMachine.PushAndWait(DynamicMenuState.i);
+            yield return _gameController.StateMachine.PushAndWait(DynamicMenuState.i);
 
             if (DynamicMenuState.i.SelectedItem == 0)
                 if (select == "Summary")
                 {
                     SummaryState.i.SelectedPokemon = selectedPokemonIndex;
-                    yield return gc.StateMachine.PushAndWait(SummaryState.i);
+                    yield return _gameController.StateMachine.PushAndWait(SummaryState.i);
                 }
                 else
                 {
@@ -142,7 +146,7 @@ public class PartyState : State<GameController>
                 {
                     // Summary
                     SummaryState.i.SelectedPokemon = selectedPokemonIndex;
-                    yield return gc.StateMachine.PushAndWait(SummaryState.i);
+                    yield return _gameController.StateMachine.PushAndWait(SummaryState.i);
                 }
                 else
                 {
@@ -159,17 +163,17 @@ public class PartyState : State<GameController>
         }
     }
 
-    IEnumerator GoToUseItemState()
+    private IEnumerator GoToUseItemState()
     {
-        yield return gc.StateMachine.PushAndWait(UseItemState.i);
-        gc.StateMachine.Pop();
+        yield return _gameController.StateMachine.PushAndWait(UseItemState.i);
+        _gameController.StateMachine.Pop();
     }
 
-    void OnBack()
+    private void OnBack()
     {
         SelectedPokemon = null;
 
-        var prevState = gc.StateMachine.GetPrevState();
+        var prevState = _gameController.StateMachine.GetPrevState();
         if (prevState == BattleState.i)
         {
             var battleState = prevState as BattleState;
@@ -180,6 +184,6 @@ public class PartyState : State<GameController>
             }
         }
 
-        gc.StateMachine.Pop();
+        _gameController.StateMachine.Pop();
     }
 }

@@ -67,7 +67,7 @@ namespace PKMNUtils.GenericSelectionUI
                 OnBack?.Invoke();
         }
 
-        void HandleListSelection()
+        private void HandleListSelection()
         {
             float v = Input.GetAxisRaw("Vertical");
 
@@ -79,7 +79,7 @@ namespace PKMNUtils.GenericSelectionUI
             }
         }
 
-        void HandleGridSelection()
+        private void HandleGridSelection()
         {
             float v = Input.GetAxisRaw("Vertical");
             float h = Input.GetAxisRaw("Horizontal");
@@ -105,7 +105,7 @@ namespace PKMNUtils.GenericSelectionUI
             }
         }
 
-        void UpdateSelectionTimer()
+        private void UpdateSelectionTimer()
         {
             if (hSelectionTimer > 0)
                 hSelectionTimer = Mathf.Max(hSelectionTimer - Time.deltaTime, 0);

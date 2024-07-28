@@ -13,11 +13,6 @@ public class GameController : MonoBehaviour
     [SerializeField] PartyScreen partyScreen;
     [SerializeField] InventoryUI inventoryUI;
 
-    public StateMachine<GameController> StateMachine { get; private set; }
-
-    public SceneDetails CurrentScene { get; private set; }
-    public SceneDetails PrevScene { get; private set; }
-
     public static GameController i { get; private set; }
 
     private void Awake()
@@ -34,6 +29,14 @@ public class GameController : MonoBehaviour
         ItemDB.Init();
         QuestDB.Init();
     }
+
+    // Outputs
+    public StateMachine<GameController> StateMachine { get; private set; }
+    public SceneDetails CurrentScene { get; private set; }
+    public SceneDetails PrevScene { get; private set; }
+
+    // References
+    TrainerController trainer;
 
     private void Start()
     {
@@ -55,6 +58,8 @@ public class GameController : MonoBehaviour
         };
     }
 
+    private void Update() => StateMachine.Execute();
+
     public void PauseGame(bool pause)
     {
         if (pause)
@@ -69,7 +74,6 @@ public class GameController : MonoBehaviour
         StateMachine.Push(BattleState.i);
     }
 
-    TrainerController trainer;
     public void StartTrainerBattle(TrainerController trainer, int unitCount)
     {
         BattleState.i.trainer = trainer;
@@ -78,7 +82,7 @@ public class GameController : MonoBehaviour
 
     public void OnEnterTrainersView(TrainerController trainer) => StartCoroutine(trainer.TriggerTrainerBattle(playerController));
 
-    void EndBattle(bool won)
+    private void EndBattle(bool won)
     {
         if (trainer != null && won == true)
         {
@@ -100,8 +104,6 @@ public class GameController : MonoBehaviour
             AudioManager.i.PlayMusic(CurrentScene.SceneMusic, fade: true);
 
     }
-
-    private void Update() => StateMachine.Execute();
 
     public void SetCurrentScene(SceneDetails currScene)
     {
