@@ -55,48 +55,37 @@ public class BattleSystem : MonoBehaviour
     [SerializeField] Sprite waterPlot;
     #endregion
 
-    #region Variables
     public static BattleSystem i { get; private set; }
+    private void Awake() => i = this;
 
-    public List<BattleAction> Actions { get; set; }
+    private PlayerController player;
+    private Pokemon wildPokemon;
+    private BattleTrigger battleTrigger;
 
+    #region Variables
+    // Outputs
     public int UnitCount { get; private set; } = 1;
-    public BattleUnit CurrentUnit { get; set; }
-    public Pokemon PokemonBeforeMega { get; set; }
-
-    public StateMachine<BattleSystem> StateMachine { get; private set; }
-
-    public event Action<bool> OnBattleOver;
-
-    public int SelectedMove { get; set; }
-    public ActionType SelectedAction { get; set; }
-    public Pokemon SelectedPokemon { get; set; }
-    public ItemBase SelectedItem { get; set; }
-
+    public int EscapeAttempts { get; set; }
     public bool IsBattleOver { get; private set; }
-
+    public bool IsTrainerBattle { get; private set; } = false;
+    public StateMachine<BattleSystem> StateMachine { get; private set; }
+    public List<BattleAction> Actions { get; set; }
+    public BattleUnit CurrentUnit { get; set; }
     public PokemonParty PlayerParty { get; private set; }
-    public PokemonParty TrainerParty { get; private set;}
-    public Pokemon WildPokemon { get; private set;}
-
+    public PokemonParty TrainerParty { get; private set; }
+    public TrainerController Trainer { get; private set; }
+    public ItemBase SelectedItem { get; set; }
     public Field Field { get; set; }
 
-    public bool IsTrainerBattle { get; private set; } = false;
-    PlayerController player;
-    public TrainerController Trainer { get; private set; }
-
-    public int escapeAttempts { get; set; }
-
-    BattleTrigger battleTrigger;
+    // Events
+    public event Action<bool> OnBattleOver;
     #endregion
-
-    private void Awake() => i = this;
 
     public IEnumerator StartBattle(PokemonParty playerParty, Pokemon wildPokemon,
         BattleTrigger trigger = BattleTrigger.TallGrass, int unitCount=1)
     {
         this.PlayerParty = playerParty;
-        this.WildPokemon = wildPokemon;
+        this.wildPokemon = wildPokemon;
         this.UnitCount = unitCount;
 
         player = playerParty.GetComponent<PlayerController>();
@@ -127,7 +116,7 @@ public class BattleSystem : MonoBehaviour
         yield return SetupBattle();
     }
 
-    void SelectBattleGround(BattleTrigger trigger)
+    private void SelectBattleGround(BattleTrigger trigger)
     {
         switch (trigger)
         {
@@ -208,18 +197,18 @@ public class BattleSystem : MonoBehaviour
         StateMachine.Push(ActionSelectionState.i);
     }
 
-    void InvokePokemonAbilities( Pokemon playerUnit, Pokemon enemyUnit)
+    private void InvokePokemonAbilities( Pokemon playerUnit, Pokemon enemyUnit)
     {
         InvokeAbility(enemyUnit, playerUnit);
         InvokeAbility(playerUnit, enemyUnit);
     }
 
-    void InvokeAbility(Pokemon source, Pokemon target) => source.Ability?.OnPokemonEnter?.Invoke(source, target);
+    private void InvokeAbility(Pokemon source, Pokemon target) => source.Ability?.OnPokemonEnter?.Invoke(source, target);
 
-    void ResetBattleState()
+    private void ResetBattleState()
     {
         IsBattleOver = false;
-        escapeAttempts = 0;
+        EscapeAttempts = 0;
         partyScreen.Init();
     }
 
@@ -227,7 +216,7 @@ public class BattleSystem : MonoBehaviour
     {
         // Wild Pokemon Battle
         playerUnits[0].Setup(PlayerParty.GetHealthyPokemon());
-        enemyUnits[0].Setup(WildPokemon);
+        enemyUnits[0].Setup(wildPokemon);
 
         dialogBox.SetMoveNames(playerUnits[0].Pokemon.Moves);
         yield return dialogBox.TypeDialog($"A wild {enemyUnits[0].Pokemon.Base.Name} appeared.");
@@ -410,7 +399,7 @@ public class BattleSystem : MonoBehaviour
         }
     }
 
-    int TryToCatchPokemon(Pokemon pokemon, PokeballItem pokeball)
+    private int TryToCatchPokemon(Pokemon pokemon, PokeballItem pokeball)
     {
         float a = (3 * pokemon.MaxHp - 2 * pokemon.HP) * pokemon.Base.CatchRate * pokeball.CatchRateModifier * ConditionsDB.GetStatusBonus(pokemon.Status) / (3 * pokemon.MaxHp);
 

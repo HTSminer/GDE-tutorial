@@ -610,7 +610,7 @@ public class RunTurnState : State<BattleSystem>
             yield break;
         }
 
-        ++_battleSystem.escapeAttempts;
+        ++_battleSystem.EscapeAttempts;
 
         int playerSpeed = _playerUnits[0].Pokemon.Speed;
         int enemySpeed = _enemyUnits[0].Pokemon.Speed;
@@ -622,7 +622,7 @@ public class RunTurnState : State<BattleSystem>
         }
         else
         {
-            float f = (playerSpeed * 128) / enemySpeed + 30 * _battleSystem.escapeAttempts;
+            float f = (playerSpeed * 128) / enemySpeed + 30 * _battleSystem.EscapeAttempts;
             f = f % 256;
 
             if (Random.Range(0, 256) < f)

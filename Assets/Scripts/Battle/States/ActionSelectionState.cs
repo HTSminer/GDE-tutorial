@@ -12,6 +12,8 @@ public class ActionSelectionState : State<BattleSystem>
     public static ActionSelectionState i { get; private set; }
     private void Awake() => i = this;
 
+    private Pokemon selectedPokemon;
+
     // Outputs
     public int ActionIndex { get; set; }
 
@@ -81,7 +83,6 @@ public class ActionSelectionState : State<BattleSystem>
         var selectedMove = MoveSelectionState.i.Moves[MoveSelectionState.i.SelectedMove];
         if (selectedMove != null)
         {
-            _battleSystem.SelectedAction = ActionType.Move;
             _battleSystem.CurrentUnit.Pokemon.CurrentMove = selectedMove;
 
             if (_battleSystem.UnitCount > 1)
@@ -93,7 +94,6 @@ public class ActionSelectionState : State<BattleSystem>
 
                 _battleSystem.DialogBox.SetDialog($"Choose an action for {currentUnit.Pokemon.Base.Name}");
                 actionSelection.SelectedItem = 0;
-                actionSelection.gameObject.SetActive(true);
             }
             else
             {
@@ -108,17 +108,16 @@ public class ActionSelectionState : State<BattleSystem>
                 yield return AddBattleAction(action);
             }
         }
+
+        actionSelection.gameObject.SetActive(true);
     }
 
     private IEnumerator GoToPartyState()
     {
         yield return GameController.i.StateMachine.PushAndWait(PartyState.i);
-        var selectedPokemon = PartyState.i.SelectedPokemon;
+        selectedPokemon = PartyState.i.SelectedPokemon;
         if (selectedPokemon != null)
         {
-            _battleSystem.SelectedAction = ActionType.SwitchPokemon;
-            _battleSystem.SelectedPokemon = selectedPokemon;
-
             var action = new BattleAction()
             {
                 Type = ActionType.SwitchPokemon,

@@ -16,6 +16,7 @@ public class MoveSelectionState : State<BattleSystem>
     private void Awake() => i = this;
 
     private bool canMega;
+    private Pokemon pokemonBeforeMega;
 
     // Outputs
     public List<Move> Moves { get; private set; }
@@ -92,7 +93,7 @@ public class MoveSelectionState : State<BattleSystem>
             moveDetailsUI.SetActive(false);
             _battleSystem.DialogBox.EnableDialogText(true);
 
-            _battleSystem.PokemonBeforeMega = _pokemon;
+            pokemonBeforeMega = _pokemon;
             _pokemon.isMega = true;
             canMega = false;
             megaEvoUI.SetActive(canMega);

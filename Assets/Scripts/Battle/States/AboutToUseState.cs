@@ -18,10 +18,11 @@ public class AboutToUseState : State<BattleSystem>
 
     // References
     private BattleSystem _battleSystem;
-
+    private ActionSelectionState actionState;
     public override void Enter(BattleSystem owner)
     {
         _battleSystem = owner;
+        actionState = _battleSystem.GetComponent<ActionSelectionState>();
         StartCoroutine(StartState());
     }
 
@@ -61,7 +62,7 @@ public class AboutToUseState : State<BattleSystem>
             yield return ContinueBattle();
     }
 
-    IEnumerator SwitchAndContinueBattle()
+    private IEnumerator SwitchAndContinueBattle()
     {
         yield return GameController.i.StateMachine.PushAndWait(PartyState.i);
         var selectedPokemon = PartyState.i.SelectedPokemon;
@@ -71,7 +72,7 @@ public class AboutToUseState : State<BattleSystem>
         yield return ContinueBattle();
     }
 
-    IEnumerator ContinueBattle()
+    private IEnumerator ContinueBattle()
     {
         yield return _battleSystem.SendNextTrainerPokemon();
         _battleSystem.StateMachine.Pop();
