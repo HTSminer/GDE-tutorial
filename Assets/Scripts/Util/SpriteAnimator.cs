@@ -38,7 +38,7 @@ public class SpriteAnimator
         }
     }
 
-    public async Task AnimateOnce(List<Sprite> frames, Image anim)
+    public IEnumerator AnimateOnce(List<Sprite> frames, Image anim)
     {
         float elapsedTime = 0f;
         int frameCount = frames.Count;
@@ -54,7 +54,7 @@ public class SpriteAnimator
                 currentFrame++;
             }
 
-            await Task.Yield();
+            yield return null;
         }
 
         if (frameCount > 0)

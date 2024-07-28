@@ -110,15 +110,15 @@ public class BattleHud : MonoBehaviour
 
     }
 
-    public async Task SetExpSmooth(bool reset=false)
+    public IEnumerator SetExpSmooth(bool reset=false)
     {
-        if (expBar == null) return;
+        if (expBar == null) yield break;
 
         if (reset)
             expBar.transform.localScale = new Vector3(0, 1, 1);
 
         float normalizedExp = _pokemon.GetNormalizedExp();
-        await expBar.transform.DOScaleX(normalizedExp, 1.5f).AsyncWaitForCompletion();
+        yield return expBar.transform.DOScaleX(normalizedExp, 1.5f).WaitForCompletion();
     }
 
     public void UpdateHP()
@@ -131,26 +131,9 @@ public class BattleHud : MonoBehaviour
         yield return hpBar.SetHPSmooth((float)_pokemon.HP / _pokemon.MaxHp);
     }
 
-    public async Task WaitForHPUpdate()
+    public IEnumerator WaitForHPUpdate()
     {
-        var tcs = new TaskCompletionSource<bool>();
-        
-        void CheckCondition()
-        {
-            if (!hpBar.IsUpdating)
-                tcs.SetResult(true);
-        }
-
-        while (hpBar.IsUpdating)
-        {
-            CheckCondition();
-            await Task.Yield();
-        }
-
-        if (!tcs.Task.IsCompleted)
-            tcs.SetResult(true);
-
-        await tcs.Task;
+        yield return new WaitUntil(() => hpBar.IsUpdating == false);
     }
 
     public void ClearData()

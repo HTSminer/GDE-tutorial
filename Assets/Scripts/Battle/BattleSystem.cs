@@ -27,10 +27,6 @@ public class BattleSystem : MonoBehaviour
     [SerializeField] GameObject singleBattleElements;
     [SerializeField] GameObject multiBattleElements;
 
-    List<BattleUnit> playerUnits;
-    List<BattleUnit> enemyUnits;
-
-
     [Header("Audio")]
     [SerializeField] AudioClip wildBattleMusic;
     [SerializeField] AudioClip trainerBattleMusic;
@@ -61,6 +57,8 @@ public class BattleSystem : MonoBehaviour
     private PlayerController player;
     private Pokemon wildPokemon;
     private BattleTrigger battleTrigger;
+    private List<BattleUnit> playerUnits;
+    private List<BattleUnit> enemyUnits;
 
     #region Variables
     // Outputs
@@ -360,7 +358,7 @@ public class BattleSystem : MonoBehaviour
 
         // Animations
         yield return pokeball.transform.DOJump(enemyUnit.transform.position + new Vector3(-0.3f, 2), 2f, 1, 1f).WaitForCompletion();
-        yield return enemyUnit.PlayCaptureAnimation();
+        enemyUnit.PlayCaptureAnimation();
         yield return pokeball.transform.DOMoveY(enemyUnit.transform.position.y - 2.7f, 0.5f).WaitForCompletion();
 
         int shakeCount = TryToCatchPokemon(enemyUnit.Pokemon, pokeballItem);
@@ -388,7 +386,7 @@ public class BattleSystem : MonoBehaviour
             // Pokemon Broke Free
             yield return new WaitForSeconds(1);
             pokeball.DOFade(0, 0.2f);
-            yield return enemyUnit.PlayBreakOutAnimation();
+            enemyUnit.PlayBreakOutAnimation();
 
             if (shakeCount < 2)
                 yield return dialogBox.TypeDialog($"{enemyUnit.Pokemon.Base.Name} broke free!");

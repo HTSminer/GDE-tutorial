@@ -1,4 +1,5 @@
 using PKMNUtils.StateMachine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +8,6 @@ using UnityEngine;
 
 public class TargetSelectionState : State<BattleSystem>
 {
-    [SerializeField] TargetSelectionUI selectionUI;
-
     public static TargetSelectionState i { get; private set; }
     private void Awake() => i = this;
 
@@ -17,6 +16,9 @@ public class TargetSelectionState : State<BattleSystem>
     // References
     private BattleSystem _battleSystem;
     private ActionSelectionState _actionState;
+
+    // Events
+    private event Action<int> OnSelected;
 
     public override void Enter(BattleSystem owner)
     {
@@ -30,7 +32,7 @@ public class TargetSelectionState : State<BattleSystem>
     public override void Exit()
     {
         _battleSystem.EnemyUnits[currentTarget].SetSelected(false);
-        _actionState.ActionIndex++;
+        OnTargetSelected();
     }
 
     private void HandleSelection()
@@ -65,6 +67,29 @@ public class TargetSelectionState : State<BattleSystem>
         {
             _battleSystem.EnemyUnits[currentTarget].SetSelected(false);
             _battleSystem.StateMachine.Pop();
+        }
+    }
+
+    private void OnTargetSelected()
+    {
+        if (_battleSystem.PlayerUnits.Count > 1)
+        {
+            if (_actionState.ActionIndex == 0)
+            {
+                _actionState.ActionIndex = 1;
+            }
+            else if (_actionState.ActionIndex == 1)
+            {
+                _actionState.ActionIndex = 0;
+            }
+            else
+            {
+                Debug.LogError("Unhandled ActionIndex");
+            }
+        }
+        else
+        {
+            _actionState.ActionIndex = 0;
         }
     }
 }

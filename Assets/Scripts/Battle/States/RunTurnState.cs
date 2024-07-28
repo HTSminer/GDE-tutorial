@@ -416,7 +416,7 @@ public class RunTurnState : State<BattleSystem>
             if (battleWon)
                 AudioManager.i.PlayMusic(_battleSystem.BattleVictoryMusic);
 
-            for (int i = 0; i < _battleSystem.UnitCount; i++)
+            for (int i = 0; i < Mathf.Min(_battleSystem.UnitCount, _playerUnits.Count); i++)
             {
                 var playerUnit = _playerUnits[i];
 

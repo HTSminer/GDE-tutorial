@@ -95,42 +95,42 @@ public class BattleUnit : MonoBehaviour
         sequence.Join(image.DOFade(0f, 0.5f));
     }
 
-    public async Task PlayCaptureAnimation()
+    public void PlayCaptureAnimation()
     {
         var sequence = DOTween.Sequence();
         sequence.Append(image.DOFade(0, 0.5f));
         sequence.Join(transform.DOLocalMoveY(originalPos.y + 50f, 0.5f));
         sequence.Join(transform.DOScale(new Vector3(0.3f, 0.3f, 1f), 0.5f));
-        await sequence.AsyncWaitForCompletion();
+        sequence.WaitForCompletion();
     }
 
-    public async Task PlayBreakOutAnimation()
+    public void PlayBreakOutAnimation()
     {
         var sequence = DOTween.Sequence();
         sequence.Append(image.DOFade(1, 0.5f));
         sequence.Join(transform.DOLocalMoveY(originalPos.y, 0.5f));
         sequence.Join(transform.DOScale(new Vector3(1f, 1f, 1f), 0.5f));
-        await sequence.AsyncWaitForCompletion();
+        sequence.WaitForCompletion();
     }
 
-    public async Task PlayMegaAnimation()
+    public IEnumerator PlayMegaAnimation()
     {
         megaAnim.gameObject.SetActive(true);
 
         var sequence = DOTween.Sequence();
         sequence.Append(megaAnim.DOFade(1, 0.5f));
-        await animator.AnimateOnce(megaFrames, megaAnim);
-        await sequence.AsyncWaitForCompletion();
+        yield return animator.AnimateOnce(megaFrames, megaAnim);
+        sequence.WaitForCompletion();
     }
 
-    public async Task MegaEvolve(Forms mega)
+    public IEnumerator MegaEvolve(Forms mega)
     {
         var gc = GameController.i;
 
         Pokemon.MegaEvolve(mega);
         
-        await PlayMegaAnimation();
-        await Task.Delay(1000);
+        yield return PlayMegaAnimation();
+        yield return new WaitForSeconds(1);
 
         gc.BattleSystem.CurrentUnit.Setup(Pokemon);
         gc.PartyScreen.SetPartyData();
