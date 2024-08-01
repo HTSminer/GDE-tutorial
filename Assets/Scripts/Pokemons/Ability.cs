@@ -22,7 +22,7 @@ public class Ability : EffectData
 
 
     public Action<Pokemon> OnBeforeTurn { get; set; }
-    public Action<int, Pokemon, Pokemon, EffectData> OnBeforeMove { get; set; }
+    public Func <Pokemon, Pokemon, Move, bool> OnBeforeMove { get; set; }
     public Func<float, Pokemon, Pokemon, Move, int> OnBeforeDamage { get; set; }
     public Action<float, Pokemon, Pokemon, Move> OnDamagingHit { get; set; }
     public Action<int, Pokemon, Pokemon, EffectData> OnAfterMove { get; set; }

@@ -678,6 +678,12 @@ public class Pokemon
             Ability?.OnOpponentStatus?.Invoke(this);
         }
 
+        if (Ability?.OnBeforeMove != null && Ability?.OnBeforeMove(target, source, move) == false)
+        {
+            canPerformMove = false;
+            Ability?.OnBeforeMove?.Invoke(target, source, move);
+        }
+
         if (VolatileStatus?.OnBeforeMove != null && VolatileStatus?.OnBeforeMove(this) == false)
             canPerformMove = false;
 

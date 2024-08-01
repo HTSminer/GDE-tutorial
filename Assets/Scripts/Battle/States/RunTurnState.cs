@@ -52,7 +52,7 @@ public class RunTurnState : State<BattleSystem>
             if (action.Type == ActionType.Move)
             {
                 yield return RunMove(action.User, action.Target, action.Move);
-                yield return RunAfterTurn(action.User, action.Target, action.Move);
+                //yield return RunAfterTurn(action.User, action.Target, action.Move);
             }
             else if (action.Type == ActionType.SwitchPokemon)
             {
@@ -73,11 +73,149 @@ public class RunTurnState : State<BattleSystem>
             }
         }
 
+        foreach (var action in _battleSystem.Actions)
+        {
+            if (action.IsInvalid) continue;
+            yield return RunAfterTurn(action.User, action.Target, action.Move);
+        }
+
+        var faintedPlayerUnits = _battleSystem.PlayerUnits.Where(u => u.Pokemon.HP <= 0);
+        foreach (var unit in faintedPlayerUnits)
+            yield return CheckFaintedAfterTurn(unit);
+
+        var faintedEnemyUnits = _battleSystem.EnemyUnits.Where(u => u.Pokemon.HP <= 0);
+        foreach (var unit in faintedEnemyUnits)
+            yield return CheckFaintedAfterTurn(unit);
+
         yield return WeatherEffects();
 
         _battleSystem.Actions.Clear();
         _actionState.ActionIndex = 0;
         _battleSystem.StateMachine.Pop();
+    }
+
+    private IEnumerator CheckFaintedAfterTurn(BattleUnit faintedUnit)
+    {
+        if (faintedUnit.IsPlayerUnit)
+        {
+            var activePokemons = _playerUnits.Select(u => u.Pokemon).Where(p => p.HP > 0).ToList();
+            var nextPokemon = _playerParty.GetHealthyPokemon(activePokemons);
+
+            if (activePokemons.Count == 0 && nextPokemon == null)
+            {
+                _battleSystem.BattleOver(false);
+            }
+            else if (nextPokemon != null)
+            {
+                yield return GameController.i.StateMachine.PushAndWait(PartyState.i);
+                yield return _battleSystem.SwitchPokemon(faintedUnit, PartyState.i.SelectedPokemon);
+            }
+        }
+        else
+        {
+            if (!isTrainerBattle)
+            {
+                _battleSystem.BattleOver(true);
+                yield break;
+            }
+
+            var activePokemons = _enemyUnits.Select(u => u.Pokemon).Where(p => p.HP > 0).ToList();
+            var nextPokemon = _trainerParty.GetHealthyPokemon(activePokemons);
+
+            if (activePokemons.Count == 0 && nextPokemon == null)
+            {
+                _battleSystem.BattleOver(true);
+            }
+            else if (nextPokemon != null)
+            {
+                if (_battleSystem.UnitCount == 1)
+                {
+                    AboutToUseState.i.NewPokemon = nextPokemon;
+                    yield return _battleSystem.StateMachine.PushAndWait(AboutToUseState.i);
+                }
+                else
+                {
+                    yield return _battleSystem.SendNextTrainerPokemon();
+                }
+            }
+        }
+    }
+
+    private IEnumerator CheckAfterFainted(BattleUnit faintedUnit)
+    {
+        var actionToRemove = _battleSystem.Actions.FirstOrDefault(a => a.User == faintedUnit);
+        if (actionToRemove != null)
+            actionToRemove.IsInvalid = true;
+
+        if (faintedUnit.IsPlayerUnit)
+        {
+            // Attacks targeting removed unit redirect to unit that is in battle.
+            var actionsToChange = _battleSystem.Actions.Where(a => a.Target == faintedUnit).ToList();
+            actionsToChange.ForEach(a => a.Target = _playerUnits.First());
+
+            var activePokemons = _playerUnits.Select(u => u.Pokemon).Where(p => p.HP > 0).ToList();
+            var nextPokemon = _playerParty.GetHealthyPokemon(activePokemons);
+
+            if (activePokemons.Count == 0 && nextPokemon == null)
+            {
+                _battleSystem.BattleOver(false);
+            }
+            else if (nextPokemon != null)
+            {
+                // Send out next pokemon.
+                UnitToSwitch = faintedUnit;
+                yield return OpenPartyScreen();
+            }
+            else if (nextPokemon == null && activePokemons.Count > 0)
+            {
+                // No pokemon left to send out but we can still continue battle.
+                _playerUnits.Remove(faintedUnit);
+                faintedUnit.Hud.gameObject.SetActive(false);
+            }
+        }
+        else
+        {
+            if (!isTrainerBattle)
+            {
+                _battleSystem.BattleOver(true);
+                yield break;
+            }
+
+            // Attacks targeting removed unit redirect to unit that is in battle.
+            var actionsToChange = _battleSystem.Actions.Where(a => a.Target == faintedUnit).ToList();
+            actionsToChange.ForEach(a => a.Target = _playerUnits.First());
+
+            var activePokemons = _enemyUnits.Select(u => u.Pokemon).Where(p => p.HP > 0).ToList();
+            var nextPokemon = _trainerParty.GetHealthyPokemon(activePokemons);
+
+            if (activePokemons.Count == 0 && nextPokemon == null)
+            {
+                _battleSystem.BattleOver(true);
+            }
+            else if (nextPokemon != null)
+            {
+                if (_battleSystem.UnitCount == 1)
+                {
+                    UnitToSwitch = _playerUnits[0];
+
+                    AboutToUseState.i.NewPokemon = nextPokemon;
+                    yield return _battleSystem.StateMachine.PushAndWait(AboutToUseState.i);
+                }
+                else
+                {
+                    yield return _battleSystem.SendNextTrainerPokemon();
+                }
+            }
+            else if (nextPokemon == null && activePokemons.Count > 0)
+            {
+                _enemyUnits.Remove(faintedUnit);
+                faintedUnit.Hud.gameObject.SetActive(false);
+
+                // Attacks targeting removed unit redirect to unit that is in battle.
+                actionsToChange = _battleSystem.Actions.Where(a => a.Target == faintedUnit).ToList();
+                actionsToChange.ForEach(a => a.Target = _enemyUnits.First());
+            }
+        }
     }
 
     private IEnumerator UseItem()
@@ -404,7 +542,7 @@ public class RunTurnState : State<BattleSystem>
 
         yield return HandleExpGain(faintedUnit);
 
-        yield return NextStepsAfterFainting(faintedUnit);
+        yield return CheckAfterFainted(faintedUnit);
     }
 
     private IEnumerator HandleExpGain(BattleUnit faintedUnit)
@@ -507,79 +645,6 @@ public class RunTurnState : State<BattleSystem>
         playerUnit.Pokemon.LearnMove(newMove);
         yield return _dialogBox.TypeDialog($"{playerUnit.Pokemon.Base.Name} learned {newMove.Name}.");
         _dialogBox.SetMoveNames(playerUnit.Pokemon.Moves);
-    }
-
-    private IEnumerator NextStepsAfterFainting(BattleUnit faintedUnit)
-    {
-        var actionToRemove = _battleSystem.Actions.FirstOrDefault(a => a.User == faintedUnit);
-        if (actionToRemove != null)
-            actionToRemove.IsInvalid = true;
-
-        if (faintedUnit.IsPlayerUnit)
-        {
-            var activePokemons = _playerUnits.Select(u => u.Pokemon).Where(p => p.HP > 0).ToList();
-            var nextPokemon = _playerParty.GetHealthyPokemon(activePokemons);
-
-            if (activePokemons.Count == 0 && nextPokemon == null)
-            {
-                _battleSystem.BattleOver(false);
-            }
-            else if (nextPokemon != null)
-            {
-                // Send out next pokemon.
-                UnitToSwitch = faintedUnit;
-                yield return OpenPartyScreen();
-            }
-            else if (nextPokemon == null && activePokemons.Count > 0)
-            {
-                // No pokemon left to send out but we can still continue battle.
-                _playerUnits.Remove(faintedUnit);
-                faintedUnit.Hud.gameObject.SetActive(false);
-
-                // Attacks targeting removed unit redirect to unit that is in battle.
-                var actionsToChange = _battleSystem.Actions.Where(a => a.Target == faintedUnit).ToList();
-                actionsToChange.ForEach(a => a.Target = _playerUnits.First());
-            }
-        }
-        else
-        {
-            if (!isTrainerBattle)
-            {
-                _battleSystem.BattleOver(true);
-                yield break; 
-            }
-
-            var activePokemons = _enemyUnits.Select(u => u.Pokemon).Where(p => p.HP > 0).ToList();
-            var nextPokemon = _trainerParty.GetHealthyPokemon(activePokemons);
-
-            if (activePokemons.Count == 0 && nextPokemon == null)
-            {
-                _battleSystem.BattleOver(true);
-            }
-            else if (nextPokemon != null)
-            {
-                if (_battleSystem.UnitCount == 1)
-                {
-                    UnitToSwitch = _playerUnits[0];
-
-                    AboutToUseState.i.NewPokemon = nextPokemon;
-                    yield return _battleSystem.StateMachine.PushAndWait(AboutToUseState.i);
-                }
-                else
-                {
-                    yield return _battleSystem.SendNextTrainerPokemon();
-                }
-            }
-            else if (nextPokemon == null && activePokemons.Count > 0)
-            {
-                _enemyUnits.Remove(faintedUnit);
-                faintedUnit.Hud.gameObject.SetActive(false);
-
-                // Attacks targeting removed unit redirect to unit that is in battle.
-                var actionsToChange = _battleSystem.Actions.Where(a => a.Target == faintedUnit).ToList();
-                actionsToChange.ForEach(a => a.Target = _enemyUnits.First());
-            }
-        }
     }
 
     private IEnumerator OpenPartyScreen()

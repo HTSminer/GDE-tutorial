@@ -512,6 +512,154 @@ public class AbilityDB
         //        }
         //    }
         //},
+        {
+            AbilityID.intimidate,
+            new Ability()
+            {
+                Name = "Intimidate",
+                OnPokemonEnter = (Pokemon target, Pokemon source) =>
+                {
+                    if (target.Ability.Id != AbilityID.inner_focus)
+                    {
+                        Dictionary<Stat, int> boost = new Dictionary<Stat, int>()
+                        {
+                            { Stat.Attack, -1 }
+                        };
+
+                        target.ApplyBoosts(boost, target);
+                    }
+                }
+            }
+        },
+        //{
+        //    AbilityID.shadow_tag,
+        //    new Ability()
+        //    {
+        //        Name = "ShadowTag",
+        //        OnPokemonEnter = (Pokemon target, Pokemon source) =>
+        //        {
+        //            if (target.Ability.Id != AbilityID.inner_focus)
+        //            {
+        //                Dictionary<Stat, int> boost = new Dictionary<Stat, int>()
+        //                {
+        //                    { Stat.Attack, -1 }
+        //                };
+
+        //                target.ApplyBoosts(boost, target);
+        //            }
+        //        }
+        //    }
+        //},
+        {
+            AbilityID.rough_skin,
+            new Ability()
+            {
+                Name = "Rough Skin",
+                OnDamagingHit = (float dmg, Pokemon source, Pokemon attacker, Move move) =>
+                {
+                    attacker.StatusChanges.Enqueue($"{attacker.Base.Name} is damaged by {source.Base.Name}'s Rough Skin.");
+                    attacker.DecreaseHP(attacker.MaxHp / 16);
+                    Debug.Log($"Rough Skin damage to attacker");
+                }
+            }
+        },
+        {
+            AbilityID.wonder_guard,
+            new Ability()
+            {
+                Name = "Wonder Guard",
+                OnBeforeMove = (Pokemon target, Pokemon source, Move move) =>
+                {
+                    if (TypeChart.GetEffectiveness(move.Base.Type, source.Base.Type1) != 2f)
+                    {
+                        target.StatusChanges.Enqueue($"{target.Base.Name} is not affected by {move.Base.Name}!");
+                        return false;
+                    }
+
+                    return true;
+                }
+            }
+        },
+        {
+            AbilityID.levitate,
+            new Ability()
+            {
+                Name = "Levitate",
+                OnBeforeMove = (Pokemon target, Pokemon source, Move move) =>
+                {
+                    if (move.Base.Type == PokemonType.Ground)
+                    {
+                        target.StatusChanges.Enqueue($"It doesn't affect {target.Base.Name}!");
+                        return false;
+                    }
+
+                    return true;
+                }
+            }
+        },
+        {
+            AbilityID.effect_spore,
+            new Ability()
+            {
+                Name = "Effect Spore",
+                OnAfterMove = (int dmg, Pokemon source, Pokemon target, EffectData effects) =>
+                {
+                    // 10% chance to cause a status effect when hit with damaging moves
+                    if (source.CurrentMove.Base.HasFlag(MoveFlag.Contact) && Random.Range(1, 11) == 1)
+                    {
+                        int r = Random.Range(1, 101);
+                        if (r < 33)
+                            target.SetVolatileStatus(source, ConditionID.psn, effects);
+                        else if (r > 66)
+                            target.SetVolatileStatus(source, ConditionID.par, effects);
+                        else
+                            target.SetVolatileStatus(source, ConditionID.slp, effects);
+                    }
+                }
+            }
+        },
+        {
+            AbilityID.synchronize,
+            new Ability()
+            {
+                Name = "Synchronize",
+                OnAfterMove = (int dmg, Pokemon source, Pokemon target, EffectData effects) =>
+                {
+                    ConditionID[] status = { ConditionID.psn, ConditionID.brn, ConditionID.par };
+                    if (status.Contains(source.Status.Id))
+                    {
+                        target.SetStatus(target, source.Status.Id);
+                    }
+                }
+            }
+        },
+        {
+            AbilityID.clear_body,
+            new Ability()
+            {
+                Name = "Clear Body",
+                OnBoost = (Dictionary<Stat, int> boosts, Pokemon target, Pokemon source) =>
+                {
+                    // If it's self boost then return
+                    if (source != null && target == source) return;
+
+                    bool showMsg = false;
+
+                    foreach (var stat in boosts.Keys) {
+                        if (boosts[stat] < 0)
+                        {
+                            showMsg = true;
+                            boosts.Remove(Stat.Accuracy);
+                        }
+                    }
+
+                    if (showMsg)
+                    {
+                        target.StatusChanges.Enqueue($"{target.Base.Name}'s Clear Body prevents stat loss");
+                    }
+                }
+            }
+        },
 
         // 1. Abilities that modify stats
         {
@@ -714,33 +862,6 @@ public class AbilityDB
                         boosts.Remove(Stat.Attack);
 
                         target.StatusChanges.Enqueue($"{target.Base.Name}'s attack cannot be decreased");
-                    }
-                }
-            }
-        },
-        {
-            AbilityID.clear_body,
-            new Ability()
-            {
-                Name = "Clear Body",
-                OnBoost = (Dictionary<Stat, int> boosts, Pokemon target, Pokemon source) =>
-                {
-                    // If it's self boost then return
-                    if (source != null && target == source) return;
-
-                    bool showMsg = false;
-
-                    foreach (var stat in boosts.Keys) {
-                        if (boosts[stat] < 0)
-                        {
-                            showMsg = true;
-                            boosts.Remove(Stat.Accuracy);
-                        }
-                    }
-
-                    if (showMsg)
-                    {
-                        target.StatusChanges.Enqueue($"{target.Base.Name}'s Clear Body prevents stat loss");
                     }
                 }
             }
@@ -948,25 +1069,7 @@ public class AbilityDB
         },
 
         // 8. Abilities that happen when Pokemon enters battle
-        {
-            AbilityID.intimidate,
-            new Ability()
-            {
-                Name = "Intimidate",
-                OnPokemonEnter = (Pokemon target, Pokemon source) =>
-                {
-                    if (target.Ability.Id != AbilityID.inner_focus)
-                    {
-                        Dictionary<Stat, int> boost = new Dictionary<Stat, int>()
-                        {
-                            { Stat.Attack, -1 }
-                        };
-
-                        target.ApplyBoosts(boost, target);
-                    }
-                }
-            }
-        },
+        
         {
             AbilityID.anticipation,
             new Ability()

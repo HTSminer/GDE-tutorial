@@ -70,6 +70,11 @@ public class BattleUnit : MonoBehaviour
         image.transform.DOLocalMoveX(originalPos.x, 1f);
     }
 
+    public void PlayIdleAnimation()
+    {
+        animator.HandleUpdate();
+    }
+
     public void PlayAttackAnimation()
     {
         var sequence = DOTween.Sequence();
