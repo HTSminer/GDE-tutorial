@@ -65,7 +65,7 @@ public class PokemonBase : ScriptableObject
     [SerializeField] int catchRate = 255;
     [SerializeField] int friendship = 70;
     [SerializeField] int expYield;
-    [SerializeField] GrowthRate growthRate;
+    [SerializeField] GrowthRateID growthRate;
 
     [field: Space(50)]
     [Header("Breeding")]
@@ -107,47 +107,16 @@ public class PokemonBase : ScriptableObject
 
     public int GetExpForLevel(int level)
     {
-        if (level <= 1)
-            return 0;
-
-        if (growthRate == GrowthRate.Erratic)
-        {
-            if (level < 50)
-                return Mathf.FloorToInt((Mathf.Pow(level, 3f) * (100f - level)) / 50f);
-            else if (level >= 50 && level < 68)
-                return Mathf.FloorToInt((Mathf.Pow(level, 3f) * (150f - level)) / 100f);
-            else if (level >= 68 && level < 98)
-                return Mathf.FloorToInt((Mathf.Pow(level, 3f) * ((1911f - (10f * level)) / 3f)) / 500f);
-            else
-                return Mathf.FloorToInt((Mathf.Pow(level, 3f) * (160f - level)) / 100f);
-        }
-        else if (growthRate == GrowthRate.Fast)
-            return Mathf.FloorToInt(4 * (Mathf.Pow(level, 3f)) / 5f);
-        else if (growthRate == GrowthRate.MediumFast)
-            return Mathf.FloorToInt(Mathf.Pow(level, 3f));
-        else if (growthRate == GrowthRate.MediumSlow)
-            return Mathf.FloorToInt((6 * (Mathf.Pow(level, 3f)) / 5f) - 15f * (Mathf.Pow(level, 2f)) + 100f * level - 140f);
-        else if (growthRate == GrowthRate.Slow)
-            return Mathf.FloorToInt(5 * (Mathf.Pow(level, 3f)) / 4f);
-        else if (growthRate == GrowthRate.Fluctuating)
-        {
-            if (level < 15)
-                return Mathf.FloorToInt(Mathf.Pow(level, 3f) * ((((level + 1f) / 3f) + 24f) / 50f)); //125 * (26 / 50)
-            else if (level >= 15 && level < 36)
-                return Mathf.FloorToInt(Mathf.Pow(level, 3f) * ((level + 14f) / 50f));
-            else
-                return Mathf.FloorToInt(Mathf.Pow(level, 3f) * (((level / 2f) + 32f) / 50f));
-        }
-
-        return -1;
+        GrowthRate growth = GrowthRate.GetGrowthRate(growthRate);
+        int expForLevel = growth.MinimumExpForLevel(level);
+        return expForLevel;
     }
+
 
     public AbilityID GetRandomAbility()
     {
         var abilities = Abilities.Where(a => a > 0).ToList();
-
         int r = Random.Range(0, abilities.Count);
-        
         return Abilities[r];
     }
 
@@ -185,7 +154,8 @@ public class PokemonBase : ScriptableObject
     public int CatchRate => catchRate;
     public int Friendship => friendship;
     public int ExpYield => expYield;
-    public GrowthRate GrowthRate => growthRate;
+
+    public GrowthRate GrowthRate => GrowthRate.GetGrowthRate(growthRate);
 
     public List<LearnableMoves> LearnableMoves => learnableMoves;
     public List<MoveBase> LearnableByItems => learnableByItems;
@@ -284,8 +254,6 @@ public enum PokemonType
     None, Normal, Fire, Water, Grass, Electric, Ice, Fighting, Poison, 
     Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, Fairy 
 }
-
-public enum GrowthRate { Erratic, Fast, MediumFast, MediumSlow, Slow, Fluctuating }
 
 public enum Stat { Attack, Defense, SpAttack, SpDefense, Speed, Accuracy, Evasion, HitPoints }
 

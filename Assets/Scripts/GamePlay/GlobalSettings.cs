@@ -8,17 +8,16 @@ public class GlobalSettings : MonoBehaviour
     [SerializeField] Gradient healthBarGradient;
     [Space(50)]
     [Header("Pokémon")]
+    [SerializeField] int maxLevel = 100;
     [SerializeField] int maxEvs = 510;
     [SerializeField] int maxEvPerStat = 252;
 
-    public int MaxEvs => maxEvs;
-    public int MaxEvPerStat => maxEvPerStat;
     public Color HighlightedColor => highlightedColor;
     public Gradient HealthBarGradient => healthBarGradient;
+    public int MaxLevel => maxLevel;
+    public int MaxEvs => maxEvs;
+    public int MaxEvPerStat => maxEvPerStat;
 
     public static GlobalSettings i { get; private set; }
-    private void Awake()
-    {
-        i = this;
-    }
+    private void Awake() => i = this;
 }

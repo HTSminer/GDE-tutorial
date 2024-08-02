@@ -65,6 +65,7 @@ public class Pokemon
     public event System.Action OnHPChanged;
 
     public float SameMoveUsed { get; set; } = 1f;
+
     #endregion
 
     public void Init()
@@ -401,7 +402,7 @@ public class Pokemon
         if (Exp > Base.GetExpForLevel(level + 1))
         {
             hasLeveled = true;
-            ++level;
+            level = Base.GrowthRate.LevelFromExp(Exp);
             CalculateStats();
             return true;
         }

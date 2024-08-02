@@ -566,7 +566,12 @@ public class RunTurnState : State<BattleSystem>
                 if (_playerUnits[0].Pokemon.HeldItem != null && _playerUnits[0].Pokemon.HeldItem.Name == "Lucky Egg")
                     expGain = Mathf.FloorToInt(expGain * 1.5f);
 
-                playerUnit.Pokemon.Exp += expGain;
+                // Add Exp using GrowthRate
+                var growthRate = playerUnit.Pokemon.Base.GrowthRate;
+                playerUnit.Pokemon.Exp = growthRate.AddExp(playerUnit.Pokemon.Exp, expGain);
+
+                //playerUnit.Pokemon.Exp += expGain;
+
                 yield return _dialogBox.TypeDialog($"{playerUnit.Pokemon.Base.Name} gained {expGain} experience.");
                 yield return playerUnit.Hud.SetExpSmooth();
 
