@@ -51,11 +51,11 @@ public class BattleHud : MonoBehaviour
         
         statusSprites = new Dictionary<ConditionID, Sprite>()
         {
-            { ConditionID.psn, psnSprite },
-            { ConditionID.slp, slpSprite },
-            { ConditionID.brn, brnSprite },
-            { ConditionID.par, parSprite },
-            { ConditionID.frz, frzSprite }
+            { ConditionID.poison, psnSprite },
+            { ConditionID.sleep, slpSprite },
+            { ConditionID.burn, brnSprite },
+            { ConditionID.paralysis, parSprite },
+            { ConditionID.freeze, frzSprite }
         };
         
         SetStatusImg();

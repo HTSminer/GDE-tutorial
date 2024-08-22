@@ -138,7 +138,7 @@ public class AbilityDB
                 Name = "Limber",
                 OnTrySetStatus = (ConditionID statusId, Pokemon target, Pokemon source, EffectData effect) =>
                 {
-                    if (statusId != ConditionID.par)
+                    if (statusId != ConditionID.paralysis)
                         return true;
 
                     if (effect != null && effect.Source == EffectSource.Move)
@@ -185,7 +185,7 @@ public class AbilityDB
                     {
                         Debug.Log("Static causes Paralyze");
                         attacker.StatusChanges.Enqueue($"{attacker.Base.Name} is paralyzed by {target.Base.Name}'s Static!");
-                        attacker.SetStatus(attacker, ConditionID.par);
+                        attacker.SetStatus(attacker, ConditionID.paralysis);
                     }
                 }
             }
@@ -339,7 +339,7 @@ public class AbilityDB
                 Name = "Insomnia",
                 OnTrySetStatus = (ConditionID statusId, Pokemon target, Pokemon source, EffectData effect) =>
                 {
-                    if (statusId != ConditionID.slp)
+                    if (statusId != ConditionID.sleep)
                         return true;
 
                     if (effect != null && effect.Source == EffectSource.Move)
@@ -372,7 +372,7 @@ public class AbilityDB
                 Name = "Immunity",
                 OnTrySetStatus = (ConditionID statusId, Pokemon target, Pokemon source, EffectData effect) =>
                 {
-                    if (statusId != ConditionID.psn)
+                    if (statusId != ConditionID.poison)
                         return true;
 
                     if (effect != null && effect.Source == EffectSource.Move)
@@ -609,11 +609,11 @@ public class AbilityDB
                     {
                         int r = Random.Range(1, 101);
                         if (r < 33)
-                            target.SetVolatileStatus(source, ConditionID.psn, effects);
+                            target.SetVolatileStatus(source, ConditionID.poison, effects);
                         else if (r > 66)
-                            target.SetVolatileStatus(source, ConditionID.par, effects);
+                            target.SetVolatileStatus(source, ConditionID.paralysis, effects);
                         else
-                            target.SetVolatileStatus(source, ConditionID.slp, effects);
+                            target.SetVolatileStatus(source, ConditionID.sleep, effects);
                     }
                 }
             }
@@ -625,7 +625,7 @@ public class AbilityDB
                 Name = "Synchronize",
                 OnAfterMove = (int dmg, Pokemon source, Pokemon target, EffectData effects) =>
                 {
-                    ConditionID[] status = { ConditionID.psn, ConditionID.brn, ConditionID.par };
+                    ConditionID[] status = { ConditionID.poison, ConditionID.burn, ConditionID.paralysis };
                     if (status.Contains(source.Status.Id))
                     {
                         target.SetStatus(target, source.Status.Id);
@@ -875,7 +875,7 @@ public class AbilityDB
                 Name = "Vital Spirit",
                 OnTrySetStatus = (ConditionID statusId, Pokemon target, Pokemon source, EffectData effect) =>
                 {
-                    if (statusId != ConditionID.slp)
+                    if (statusId != ConditionID.sleep)
                         return true;
 
                     if (effect != null && effect.Source == EffectSource.Move)
@@ -892,7 +892,7 @@ public class AbilityDB
                 Name = "Water Veil",
                 OnTrySetStatus = (ConditionID statusId, Pokemon target, Pokemon source, EffectData effect) =>
                 {
-                    if (statusId != ConditionID.brn)
+                    if (statusId != ConditionID.burn)
                         return true;
 
                     if (effect != null && effect.Source == EffectSource.Move)
@@ -1005,7 +1005,7 @@ public class AbilityDB
                     {
                         Debug.Log("Poison Point causes Poison");
                         attacker.StatusChanges.Enqueue($"{attacker.Base.Name} is poisoned by {target.Base.Name}'s Poison Point!");
-                        attacker.SetStatus(attacker, ConditionID.psn);
+                        attacker.SetStatus(attacker, ConditionID.poison);
                     }
                 }
             }
@@ -1023,7 +1023,7 @@ public class AbilityDB
                     {
                         Debug.Log("Flamebody causes Burn");
                         attacker.StatusChanges.Enqueue($"{attacker.Base.Name} is burned by {target.Base.Name}'s Flame Body!");
-                        attacker.SetStatus(attacker, ConditionID.brn);
+                        attacker.SetStatus(attacker, ConditionID.burn);
                     }
                 }
             }
@@ -1057,7 +1057,7 @@ public class AbilityDB
                 Name = "Bad Dreams",
                 OnOpponentStatus = (Pokemon target) =>
                 {
-                    if (target.Status.Id == ConditionID.slp)
+                    if (target.Status.Id == ConditionID.sleep)
                     {
                         Debug.Log("Bad Dreams damage");
                         int damage = target.HP / 8;
@@ -1147,10 +1147,10 @@ public class AbilityDB
                         Dictionary<Stat, int> boost = new Dictionary<Stat, int>()
                         {
                             { Stat.Attack, 1 },
-                            { Stat.SpAttack, 1 },
+                            { Stat.Special_attack, 1 },
                             { Stat.Speed, 1 },
                             { Stat.Defense, -1 },
-                            { Stat.SpDefense, -1 }
+                            { Stat.Special_defense, -1 }
                         };
 
                         target.ApplyBoosts(boost, target);
@@ -1170,7 +1170,7 @@ public class AbilityDB
                     {
                         Dictionary<Stat, int> boost = new Dictionary<Stat, int>()
                         {
-                            { Stat.SpAttack, 1 }
+                            { Stat.Special_attack, 1 }
                         };
 
                         target.ApplyBoosts(boost, target);
@@ -1434,6 +1434,116 @@ public class AbilityDB
             new Ability()
             {
                 Name = "Sticky Hold",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.lightning_rod,
+            new Ability()
+            {
+                Name = "Lightning Rod",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.rock_head,
+            new Ability()
+            {
+                Name = "Rock Head",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.sand_rush,
+            new Ability()
+            {
+                Name = "Sand Rush",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.chlorophyll,
+            new Ability()
+            {
+                Name = "Chlorophyll",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.protean,
+            new Ability()
+            {
+                Name = "Protean",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.poison_touch,
+            new Ability()
+            {
+                Name = "Poison Touch",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.swift_swim,
+            new Ability()
+            {
+                Name = "Swift Swim",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.defiant,
+            new Ability()
+            {
+                Name = "Defiant",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.hustle,
+            new Ability()
+            {
+                Name = "Hustle",
+                //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
+                //{
+                    // TODO: Add method to modify evasiveness
+                //}
+            }
+        },
+        {
+            AbilityID.frisk,
+            new Ability()
+            {
+                Name = "Frisk",
                 //OnModifyAEva = (float acc, Pokemon attacker, Pokemon defender, Move move) =>
                 //{
                     // TODO: Add method to modify evasiveness

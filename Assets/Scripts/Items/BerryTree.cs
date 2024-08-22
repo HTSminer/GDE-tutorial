@@ -36,15 +36,9 @@ public class BerryTree : MonoBehaviour, Interactable, ISavable
         set { _activeBerryTree = value; }
     }
 
-    private void Awake()
-    {
-        PlantTimer = 0;
-    }
+    private void Awake() => PlantTimer = 0;
 
-    private void Start()
-    {
-        StartCoroutine(UpdateBerryTree());
-    }
+    private void Start() => StartCoroutine(UpdateBerryTree());
 
     public IEnumerator Interact(Transform initiator)
     {

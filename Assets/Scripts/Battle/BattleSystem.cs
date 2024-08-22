@@ -93,53 +93,7 @@ public class BattleSystem : MonoBehaviour
         AudioManager.i.PlayMusic(wildBattleMusic);
 
         battleTrigger = trigger;
-        yield return SetupBattle();
-    }
 
-    public IEnumerator StartTrainerBattle(PokemonParty playerParty, PokemonParty trainerParty,
-        BattleTrigger trigger = BattleTrigger.TallGrass, int unitCount=1)
-    {
-        this.PlayerParty = playerParty;
-        this.TrainerParty = trainerParty;
-
-        player = playerParty.GetComponent<PlayerController>();
-        Trainer = trainerParty.GetComponent<TrainerController>();
-        IsTrainerBattle = true;
-
-        this.UnitCount = unitCount;
-
-        AudioManager.i.PlayMusic(trainerBattleMusic);
-
-        battleTrigger = trigger;
-        yield return SetupBattle();
-    }
-
-    private void SelectBattleGround(BattleTrigger trigger)
-    {
-        switch (trigger)
-        {
-            case BattleTrigger.TallGrass:
-                backgroundImage.sprite = grassBg;
-                playerPlot.sprite = grassPlot;
-                enemyPlot.sprite = grassPlot;
-                break;
-            case BattleTrigger.Water:
-                backgroundImage.sprite = waterBg;
-                playerPlot.sprite = waterPlot;
-                enemyPlot.sprite = waterPlot;
-                break;
-            case BattleTrigger.Sand:
-                backgroundImage.sprite = sandBg;
-                playerPlot.sprite = sandPlot;
-                enemyPlot.sprite = sandPlot;
-                break;
-            default:
-                break;
-        }
-    }
-
-    public IEnumerator SetupBattle()
-    {
         StateMachine = new StateMachine<BattleSystem>(this);
 
         // Setup Battle Elements
@@ -164,13 +118,93 @@ public class BattleSystem : MonoBehaviour
             playerUnits[i].Clear();
             enemyUnits[i].Clear();
         }
-        
-        SelectBattleGround(battleTrigger);
+
+        switch (trigger)
+        {
+            case BattleTrigger.TallGrass:
+                backgroundImage.sprite = grassBg;
+                playerPlot.sprite = grassPlot;
+                enemyPlot.sprite = grassPlot;
+                break;
+            case BattleTrigger.Water:
+                backgroundImage.sprite = waterBg;
+                playerPlot.sprite = waterPlot;
+                enemyPlot.sprite = waterPlot;
+                break;
+            case BattleTrigger.Sand:
+                backgroundImage.sprite = sandBg;
+                playerPlot.sprite = sandPlot;
+                enemyPlot.sprite = sandPlot;
+                break;
+            default:
+                break;
+        }
 
         if (IsTrainerBattle)
-            yield return SetupTrainerBattle();
+        {
+            // Show trainer and player sprites.
+            for (int i = 0; i < playerUnits.Count; i++)
+            {
+                playerUnits[i].gameObject.SetActive(false);
+                enemyUnits[i].gameObject.SetActive(false);
+            }
+
+            playerImage.gameObject.SetActive(true);
+            trainerImage.gameObject.SetActive(true);
+            playerImage.sprite = player.Sprite;
+            trainerImage.sprite = Trainer.Sprite;
+
+            yield return dialogBox.TypeDialog($"{Trainer.Name} wants to battle");
+
+            // Send out first pokemon of trainer
+            trainerImage.gameObject.SetActive(false);
+            var enemyPokemons = TrainerParty.GetHealthyPokemons(UnitCount);
+
+            for (int i = 0; i < UnitCount; i++)
+            {
+                enemyUnits[i].gameObject.SetActive(true);
+                enemyUnits[i].Setup(enemyPokemons[i]);
+            }
+
+            string names = String.Join(" and ", enemyPokemons.Select(p => p.Base.Name));
+            yield return dialogBox.TypeDialog($"{Trainer.Name} sent out {names}.");
+
+            // Send out first pokemon of the player
+            playerImage.gameObject.SetActive(false);
+            var playerPokemons = PlayerParty.GetHealthyPokemons(UnitCount);
+
+            for (int i = 0; i < UnitCount; i++)
+            {
+                playerUnits[i].gameObject.SetActive(true);
+                playerUnits[i].Setup(playerPokemons[i]);
+            }
+
+            names = String.Join(" and ", playerPokemons.Select(p => p.Base.Name));
+            yield return dialogBox.TypeDialog($"Go {names}!");
+        }
         else
-            yield return SetupWildPokemonBattle();
+        {
+            // Wild Pokemon Battle
+            playerUnits[0].Setup(PlayerParty.GetHealthyPokemon());
+            enemyUnits[0].Setup(wildPokemon);
+
+            dialogBox.SetMoveNames(playerUnits[0].Pokemon.Moves);
+            yield return dialogBox.TypeDialog($"A wild {enemyUnits[0].Pokemon.Base.Name} appeared.");
+
+            if (enemyUnits[0].Pokemon.HeldItem == null)
+                Debug.Log($"{enemyUnits[0].Pokemon.Base.name} Held Item - NO ITEM");
+            else
+                Debug.Log($"{enemyUnits[0].Pokemon.Base.name} Held Item - {enemyUnits[0].Pokemon.HeldItem.Name.ToUpper()}");
+
+            Debug.Log($"{enemyUnits[0].Pokemon.Base.name} ability is {enemyUnits[0].Pokemon.Ability.Name.ToUpper()}");
+
+            if (playerUnits[0].Pokemon.HeldItem == null)
+                Debug.Log($"{playerUnits[0].Pokemon.Base.name} Held Item - NO ITEM");
+            else
+                Debug.Log($"{playerUnits[0].Pokemon.Base.name} Held Item - {playerUnits[0].Pokemon.HeldItem.Name.ToUpper()}");
+
+            Debug.Log($"{playerUnits[0].Pokemon.Base.name} ability is {playerUnits[0].Pokemon.Ability.Name.ToUpper()}");
+        }
 
         Field = new Field();
 
@@ -181,97 +215,182 @@ public class BattleSystem : MonoBehaviour
             yield return dialogBox.TypeDialog(Field.Weather.StartMessage);
 
         for (int i = 0; i < playerUnits.Count; i++)
-            InvokePokemonAbilities(playerUnits[i].Pokemon, enemyUnits[i].Pokemon);
+        {
+            InvokeAbility(enemyUnits[i].Pokemon, playerUnits[i].Pokemon);
+            InvokeAbility(playerUnits[i].Pokemon, enemyUnits[i].Pokemon);
+        }
 
         for (int i = 0; i < playerUnits.Count; i++)
         {
             yield return RunTurnState.i.ShowStatusChanges(playerUnits[i].Pokemon);
             yield return RunTurnState.i.ShowStatusChanges(enemyUnits[i].Pokemon);
         }
-        
-        ResetBattleState();
+
+        IsBattleOver = false;
+        EscapeAttempts = 0;
+        partyScreen.Init();
 
         Actions = new List<BattleAction>();
         StateMachine.Push(ActionSelectionState.i);
     }
 
-    private void InvokePokemonAbilities( Pokemon playerUnit, Pokemon enemyUnit)
+    public IEnumerator StartTrainerBattle(PokemonParty playerParty, PokemonParty trainerParty,
+        BattleTrigger trigger = BattleTrigger.TallGrass, int unitCount=1)
     {
-        InvokeAbility(enemyUnit, playerUnit);
-        InvokeAbility(playerUnit, enemyUnit);
-    }
+        this.PlayerParty = playerParty;
+        this.TrainerParty = trainerParty;
 
-    private void InvokeAbility(Pokemon source, Pokemon target) => source.Ability?.OnPokemonEnter?.Invoke(source, target);
+        player = playerParty.GetComponent<PlayerController>();
+        Trainer = trainerParty.GetComponent<TrainerController>();
+        IsTrainerBattle = true;
 
-    private void ResetBattleState()
-    {
+        this.UnitCount = unitCount;
+
+        AudioManager.i.PlayMusic(trainerBattleMusic);
+
+        battleTrigger = trigger;
+
+        StateMachine = new StateMachine<BattleSystem>(this);
+
+        // Setup Battle Elements
+        singleBattleElements.SetActive(UnitCount == 1);
+        multiBattleElements.SetActive(UnitCount > 1);
+
+        if (UnitCount == 1)
+        {
+            playerUnits = new List<BattleUnit>() { playerUnitSingle };
+            enemyUnits = new List<BattleUnit>() { enemyUnitSingle };
+        }
+        else
+        {
+            playerUnits = playerUnitsMulti.GetRange(0, playerUnitsMulti.Count);
+            enemyUnits = enemyUnitsMulti.GetRange(0, enemyUnitsMulti.Count);
+        }
+
+        CurrentUnit = playerUnits[0];
+
+        for (int i = 0; i < playerUnits.Count; i++)
+        {
+            playerUnits[i].Clear();
+            enemyUnits[i].Clear();
+        }
+
+        switch (trigger)
+        {
+            case BattleTrigger.TallGrass:
+                backgroundImage.sprite = grassBg;
+                playerPlot.sprite = grassPlot;
+                enemyPlot.sprite = grassPlot;
+                break;
+            case BattleTrigger.Water:
+                backgroundImage.sprite = waterBg;
+                playerPlot.sprite = waterPlot;
+                enemyPlot.sprite = waterPlot;
+                break;
+            case BattleTrigger.Sand:
+                backgroundImage.sprite = sandBg;
+                playerPlot.sprite = sandPlot;
+                enemyPlot.sprite = sandPlot;
+                break;
+            default:
+                break;
+        }
+
+        if (IsTrainerBattle)
+        {
+            // Show trainer and player sprites.
+            for (int i = 0; i < playerUnits.Count; i++)
+            {
+                playerUnits[i].gameObject.SetActive(false);
+                enemyUnits[i].gameObject.SetActive(false);
+            }
+
+            playerImage.gameObject.SetActive(true);
+            trainerImage.gameObject.SetActive(true);
+            playerImage.sprite = player.Sprite;
+            trainerImage.sprite = Trainer.Sprite;
+
+            yield return dialogBox.TypeDialog($"{Trainer.Name} wants to battle");
+
+            // Send out first pokemon of trainer
+            trainerImage.gameObject.SetActive(false);
+            var enemyPokemons = TrainerParty.GetHealthyPokemons(UnitCount);
+
+            for (int i = 0; i < UnitCount; i++)
+            {
+                enemyUnits[i].gameObject.SetActive(true);
+                enemyUnits[i].Setup(enemyPokemons[i]);
+            }
+
+            string names = String.Join(" and ", enemyPokemons.Select(p => p.Base.Name));
+            yield return dialogBox.TypeDialog($"{Trainer.Name} sent out {names}.");
+
+            // Send out first pokemon of the player
+            playerImage.gameObject.SetActive(false);
+            var playerPokemons = PlayerParty.GetHealthyPokemons(UnitCount);
+
+            for (int i = 0; i < UnitCount; i++)
+            {
+                playerUnits[i].gameObject.SetActive(true);
+                playerUnits[i].Setup(playerPokemons[i]);
+            }
+
+            names = String.Join(" and ", playerPokemons.Select(p => p.Base.Name));
+            yield return dialogBox.TypeDialog($"Go {names}!");
+        }
+        else
+        {
+            // Wild Pokemon Battle
+            playerUnits[0].Setup(PlayerParty.GetHealthyPokemon());
+            enemyUnits[0].Setup(wildPokemon);
+
+            dialogBox.SetMoveNames(playerUnits[0].Pokemon.Moves);
+            yield return dialogBox.TypeDialog($"A wild {enemyUnits[0].Pokemon.Base.Name} appeared.");
+
+            if (enemyUnits[0].Pokemon.HeldItem == null)
+                Debug.Log($"{enemyUnits[0].Pokemon.Base.name} Held Item - NO ITEM");
+            else
+                Debug.Log($"{enemyUnits[0].Pokemon.Base.name} Held Item - {enemyUnits[0].Pokemon.HeldItem.Name.ToUpper()}");
+
+            Debug.Log($"{enemyUnits[0].Pokemon.Base.name} ability is {enemyUnits[0].Pokemon.Ability.Name.ToUpper()}");
+
+            if (playerUnits[0].Pokemon.HeldItem == null)
+                Debug.Log($"{playerUnits[0].Pokemon.Base.name} Held Item - NO ITEM");
+            else
+                Debug.Log($"{playerUnits[0].Pokemon.Base.name} Held Item - {playerUnits[0].Pokemon.HeldItem.Name.ToUpper()}");
+
+            Debug.Log($"{playerUnits[0].Pokemon.Base.name} ability is {playerUnits[0].Pokemon.Ability.Name.ToUpper()}");
+        }
+
+        Field = new Field();
+
+        // Use this to set weather at start of the battle.
+        //Field.SetWeather(playerUnit.Pokemon, ConditionID.sandstorm);
+
+        if (Field.Weather != null)
+            yield return dialogBox.TypeDialog(Field.Weather.StartMessage);
+
+        for (int i = 0; i < playerUnits.Count; i++)
+        {
+            InvokeAbility(enemyUnits[i].Pokemon, playerUnits[i].Pokemon);
+            InvokeAbility(playerUnits[i].Pokemon, enemyUnits[i].Pokemon);
+        }
+
+        for (int i = 0; i < playerUnits.Count; i++)
+        {
+            yield return RunTurnState.i.ShowStatusChanges(playerUnits[i].Pokemon);
+            yield return RunTurnState.i.ShowStatusChanges(enemyUnits[i].Pokemon);
+        }
+
         IsBattleOver = false;
         EscapeAttempts = 0;
         partyScreen.Init();
+
+        Actions = new List<BattleAction>();
+        StateMachine.Push(ActionSelectionState.i);
     }
 
-    private IEnumerator SetupWildPokemonBattle()
-    {
-        // Wild Pokemon Battle
-        playerUnits[0].Setup(PlayerParty.GetHealthyPokemon());
-        enemyUnits[0].Setup(wildPokemon);
-
-        dialogBox.SetMoveNames(playerUnits[0].Pokemon.Moves);
-        yield return dialogBox.TypeDialog($"A wild {enemyUnits[0].Pokemon.Base.Name} appeared.");
-
-        if (enemyUnits[0].Pokemon.HeldItem == null)
-            Debug.Log($"{enemyUnits[0].Pokemon.Base.name} Held Item - NO ITEM");
-        else
-            Debug.Log($"{enemyUnits[0].Pokemon.Base.name} Held Item - {enemyUnits[0].Pokemon.HeldItem.Name.ToUpper()}");
-
-        Debug.Log($"{enemyUnits[0].Pokemon.Base.name} ability is {enemyUnits[0].Pokemon.Ability.Name.ToUpper()}");
-
-        Debug.Log($"{playerUnits[0].Pokemon.Base.name} Held Item - {playerUnits[0].Pokemon.HeldItem.Name.ToUpper()}");
-        Debug.Log($"{playerUnits[0].Pokemon.Base.name} ability is {playerUnits[0].Pokemon.Ability.Name.ToUpper()}");
-    }
-
-    private IEnumerator SetupTrainerBattle()
-    {
-        // Show trainer and player sprites.
-        for (int i = 0; i < playerUnits.Count; i++)
-        {
-            playerUnits[i].gameObject.SetActive(false);
-            enemyUnits[i].gameObject.SetActive(false);
-        }
-        
-        playerImage.gameObject.SetActive(true);
-        trainerImage.gameObject.SetActive(true);
-        playerImage.sprite = player.Sprite;
-        trainerImage.sprite = Trainer.Sprite;
-
-        yield return dialogBox.TypeDialog($"{Trainer.Name} wants to battle");
-
-        // Send out first pokemon of trainer
-        trainerImage.gameObject.SetActive(false);
-        var enemyPokemons = TrainerParty.GetHealthyPokemons(UnitCount);
-        
-        for (int i = 0; i < UnitCount; i++)
-        {
-            enemyUnits[i].gameObject.SetActive(true);
-            enemyUnits[i].Setup(enemyPokemons[i]);
-        }
-
-        string names = String.Join(" and ", enemyPokemons.Select(p => p.Base.Name));
-        yield return dialogBox.TypeDialog($"{Trainer.Name} sent out {names}.");
-
-        // Send out first pokemon of the player
-        playerImage.gameObject.SetActive(false);
-        var playerPokemons = PlayerParty.GetHealthyPokemons(UnitCount);
-
-        for (int i = 0; i < UnitCount; i++)
-        {
-            playerUnits[i].gameObject.SetActive(true);
-            playerUnits[i].Setup(playerPokemons[i]);
-        }
-
-        names = String.Join(" and ", playerPokemons.Select(p => p.Base.Name));
-        yield return dialogBox.TypeDialog($"Go {names}!");
-    }
+    private void InvokeAbility(Pokemon source, Pokemon target) => source.Ability?.OnPokemonEnter?.Invoke(source, target);
 
     public void BattleOver(bool won)
     {
@@ -282,9 +401,24 @@ public class BattleSystem : MonoBehaviour
         EnemyUnits.ForEach(u => u.Hud.ClearData());
 
         OnBattleOver(won);
+        StateMachine.Pop();
     }
 
     public void HandleUpdate() => StateMachine.Execute();
+
+    public IEnumerator MegaEvolution(Pokemon pokemon)
+    {
+        pokemon.PokemonBeforeMega = pokemon;
+        pokemon.isMega = true;
+        pokemon.canMega = false;
+
+        yield return DialogBox.TypeDialog($"{pokemon.Base.Name}'s {pokemon.HeldItem.Name} is reacting to the Mega Bracelet!");
+        yield return CurrentUnit.MegaEvolve(pokemon.CheckForMega(pokemon.HeldItem));
+        yield return DialogBox.TypeDialog($"{pokemon.Base.Name} Mega Evolved!.");
+        if (pokemon.isMega) CurrentUnit.Hud.MegaIcon.gameObject.SetActive(true);
+
+        StateMachine.Pop();
+    }
 
     public IEnumerator SwitchPokemon(BattleUnit unitToSwitch, Pokemon newPokemon)
     {

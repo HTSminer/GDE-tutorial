@@ -52,6 +52,8 @@ public class Pokemon
     public bool hasLeveled { get; set; } = false;
 
     public bool isMega { get; set; } = false;
+    public bool canMega { get; set; }
+    public Pokemon PokemonBeforeMega { get; set; }
 
     public string Nature { get; set; }
 
@@ -64,7 +66,7 @@ public class Pokemon
     public event System.Action OnStatusChanged;
     public event System.Action OnHPChanged;
 
-    public float SameMoveUsed { get; set; } = 1f;
+    public int SameMoveUsed { get; set; } = 1;
 
     #endregion
 
@@ -87,8 +89,8 @@ public class Pokemon
                 { Stat.HitPoints, 0 },
                 { Stat.Attack, 0 },
                 { Stat.Defense, 0 },
-                { Stat.SpAttack, 0 },
-                { Stat.SpDefense, 0 },
+                { Stat.Special_attack, 0 },
+                { Stat.Special_defense, 0 },
                 { Stat.Speed, 0 }
             };
 
@@ -97,8 +99,8 @@ public class Pokemon
             { Stat.HitPoints, 0 },
             { Stat.Attack, 0 },
             { Stat.Defense, 0 },
-            { Stat.SpAttack, 0 },
-            { Stat.SpDefense, 0 },
+            { Stat.Special_attack, 0 },
+            { Stat.Special_defense, 0 },
             { Stat.Speed, 0 }
         };
 
@@ -132,8 +134,8 @@ public class Pokemon
             { Stat.HitPoints, saveData.IV_HP },
             { Stat.Attack, saveData.IV_ATK },
             { Stat.Defense, saveData.IV_DEF },
-            { Stat.SpAttack, saveData.IV_SPA },
-            { Stat.SpDefense, saveData.IV_SPD },
+            { Stat.Special_attack, saveData.IV_SPA },
+            { Stat.Special_defense, saveData.IV_SPD },
             { Stat.Speed, saveData.IV_SPE }
         };
         StatEffortValues = new Dictionary<Stat, int>()
@@ -141,8 +143,8 @@ public class Pokemon
             { Stat.HitPoints, saveData.EV_HP },
             { Stat.Attack, saveData.EV_ATK },
             { Stat.Defense, saveData.EV_DEF },
-            { Stat.SpAttack, saveData.EV_SPA },
-            { Stat.SpDefense, saveData.EV_SPD },
+            { Stat.Special_attack, saveData.EV_SPA },
+            { Stat.Special_defense, saveData.EV_SPD },
             { Stat.Speed, saveData.EV_SPE }
         };
         Nature = saveData.nature;
@@ -174,14 +176,14 @@ public class Pokemon
             IV_HP = StatIndividualValues[Stat.HitPoints],
             IV_ATK = StatIndividualValues[Stat.Attack],
             IV_DEF = StatIndividualValues[Stat.Defense],
-            IV_SPA = StatIndividualValues[Stat.SpAttack],
-            IV_SPD = StatIndividualValues[Stat.SpDefense],
+            IV_SPA = StatIndividualValues[Stat.Special_attack],
+            IV_SPD = StatIndividualValues[Stat.Special_defense],
             IV_SPE = StatIndividualValues[Stat.Speed],
             EV_HP = StatEffortValues[Stat.HitPoints],
             EV_ATK = StatEffortValues[Stat.Attack],
             EV_DEF = StatEffortValues[Stat.Defense],
-            EV_SPA = StatEffortValues[Stat.SpAttack],
-            EV_SPD = StatEffortValues[Stat.SpDefense],
+            EV_SPA = StatEffortValues[Stat.Special_attack],
+            EV_SPD = StatEffortValues[Stat.Special_defense],
             EV_SPE = StatEffortValues[Stat.Speed],
             nature = Nature,
             heldItem = HeldItem != null ? HeldItem.name : null,
@@ -282,8 +284,8 @@ public class Pokemon
         Stats = new Dictionary<Stat, int>();
         Stats.Add(Stat.Attack, Mathf.FloorToInt(Mathf.FloorToInt((((2 * Base.Attack) + StatIndividualValues[Stat.Attack] + (StatEffortValues[Stat.Attack] / 4)) * level) / 100 + 5) * Natures.GetNature(Nature).GetATK()));
         Stats.Add(Stat.Defense, Mathf.FloorToInt(Mathf.FloorToInt((((2 * Base.Defense) + StatIndividualValues[Stat.Defense] + (StatEffortValues[Stat.Defense] / 4)) * level) / 100 + 5) * Natures.GetNature(Nature).GetDEF()));
-        Stats.Add(Stat.SpAttack, Mathf.FloorToInt(Mathf.FloorToInt((((2 * Base.SpAttack) + StatIndividualValues[Stat.SpAttack] + (StatEffortValues[Stat.SpAttack] / 4)) * level) / 100 + 5) * Natures.GetNature(Nature).GetSPA()));
-        Stats.Add(Stat.SpDefense, Mathf.FloorToInt(Mathf.FloorToInt((((2 * Base.SpDefense) + StatIndividualValues[Stat.SpDefense] + (StatEffortValues[Stat.SpDefense] / 4)) * level) / 100 + 5) * Natures.GetNature(Nature).GetSPD()));
+        Stats.Add(Stat.Special_attack, Mathf.FloorToInt(Mathf.FloorToInt((((2 * Base.SpAttack) + StatIndividualValues[Stat.Special_attack] + (StatEffortValues[Stat.Special_attack] / 4)) * level) / 100 + 5) * Natures.GetNature(Nature).GetSPA()));
+        Stats.Add(Stat.Special_defense, Mathf.FloorToInt(Mathf.FloorToInt((((2 * Base.SpDefense) + StatIndividualValues[Stat.Special_defense] + (StatEffortValues[Stat.Special_defense] / 4)) * level) / 100 + 5) * Natures.GetNature(Nature).GetSPD()));
         Stats.Add(Stat.Speed, Mathf.FloorToInt(Mathf.FloorToInt((((2 * Base.Speed) + StatIndividualValues[Stat.Speed] + (StatEffortValues[Stat.Speed] / 4)) * level) / 100 + 5) * Natures.GetNature(Nature).GetSPE()));
 
         int oldMaxHP = MaxHp;
@@ -334,8 +336,8 @@ public class Pokemon
         {
             { Stat.Attack, 0 },
             { Stat.Defense, 0 },
-            { Stat.SpAttack, 0 },
-            { Stat.SpDefense, 0 },
+            { Stat.Special_attack, 0 },
+            { Stat.Special_defense, 0 },
             { Stat.Speed, 0 },
             { Stat.Accuracy, 0 },
             { Stat.Evasion, 0 }
@@ -350,7 +352,7 @@ public class Pokemon
             if (HeldItem.Name == "Choice Band")
                 statItem = stat == Stat.Attack ? 1.5f : 1f;
             else if (HeldItem.Name == "Choice Specs")
-                statItem = stat == Stat.SpAttack ? 1.5f : 1f;
+                statItem = stat == Stat.Special_attack ? 1.5f : 1f;
         }
 
         int statVal = Stats[stat];
@@ -393,7 +395,7 @@ public class Pokemon
                 StatusChanges.Enqueue($"{Base.Name}'s {stat}{bigChange}{riseOrFall}!");
             }
 
-            Debug.Log($"{stat} has been boosted to {StatBoosts[stat]}");
+            Debug.Log($"{this.Base.Name} {stat} has been boosted to {StatBoosts[stat]}");
         }
     }
 
@@ -473,103 +475,15 @@ public class Pokemon
     #region Properties
     public int Attack => GetStat(Stat.Attack);
     public int Defense => GetStat(Stat.Defense);
-    public int SpAttack => GetStat(Stat.SpAttack);
-    public int SpDefense => GetStat(Stat.SpDefense);
+    public int SpAttack => GetStat(Stat.Special_attack);
+    public int SpDefense => GetStat(Stat.Special_defense);
     public int Speed => GetStat(Stat.Speed);
     public int MaxHp { get; private set; }
     #endregion
 
-    public DamageDetails TakeDamage (Move move, Pokemon attacker, Condition weather)
-    {
-        float critical = CritCalculation(move);
-        float type = TypeEffectiveness(move);
-
-        float weatherMod = weather?.OnDamageModify?.Invoke(this, attacker, move) ?? 1f;
-
-        var damageDetails = new DamageDetails()
-        {
-            TypeEffectiveness = type,
-            Critical = critical,
-            Fainted = false,
-            DamageDealt = 0
-        };
-
-        float attack;
-        float defense;
-        if (move.Base.Category == MoveCategory.Special)
-        {
-            attack = attacker.SpAttack;
-            defense = SpDefense;
-
-            // Abilites & Held Items might modify the stats
-            attack = attacker.ModifySpAtk(attack, attacker, move);
-            defense = ModifySpDef(defense, attacker, move);
-        }
-        else
-        {
-            attack = attacker.Attack;
-            defense = Defense;
-
-            // Abilites & Held might modify the stats
-            attack = attacker.ModifyAtk(attack, attacker, move);
-            defense = ModifyDef(defense, attacker, move);
-        }
-
-        // Abilities might modify base power
-        int basePower = Mathf.FloorToInt(attacker.OnBasePower(move.Base.Power, attacker, this, move));
-
-        float modifiers = UnityEngine.Random.Range(0.85f, 1f) * type * critical * weatherMod;
-        float statusPower = StatusPowerMultiplier(attacker, move);
-        float consPower = ConsecutivePowerMultiplier(attacker, move);
-
-        float a = ((2 * attacker.Level) / 5 + 2);
-        float power = basePower * statusPower * consPower;
-        float d = (a * power * ((float)attack / defense)) / 50 + 2;
-
-        int damage = Mathf.FloorToInt(d * modifiers);
-
-        damageDetails.DamageDealt = damage;
-
-        damage = HeldItems?.OnTakeDamage?.Invoke(damage, this, move) ?? damage;
-
-        if (Ability?.OnBeforeDamage != null)
-            DecreaseHP(Ability.OnBeforeDamage.Invoke(damage, this, attacker, move));
-        else
-            DecreaseHP(damage);
-
-        if (damage > 0) OnDamagingHit(damage, attacker, move);
-
-        return damageDetails;
-    }
-
     public float TypeEffectiveness(Move move)
     {
         return TypeChart.GetEffectiveness(move.Base.Type, this.Base.Type1) * TypeChart.GetEffectiveness(move.Base.Type, this.Base.Type2);
-    }
-
-    public float CritCalculation(Move move)
-    {
-        float critical = 1f;
-        if (!(move.Base.CritBehavior == CritBehavior.NeverCrits))
-        {
-            if (move.Base.CritBehavior == CritBehavior.AlwaysCrits)
-            {
-                critical = 1.5f;
-                CritTaken = true;
-            }
-        }
-        else
-        {
-            int critChance = 0 + ((move.Base.CritBehavior == CritBehavior.HighCritRatio) ? 1 : 0);
-            // TODO: Ability, HeldItem
-            float[] chances = new float[] { (4.167f), (12.5f), (50f), 100f };
-            if (Random.value * 100f <= chances[Mathf.Clamp(critChance, 0, 3)])
-            {
-                critical = 1.5f;
-                CritTaken = true;
-            }
-        }
-        return critical;
     }
 
     public void TakeRecoilDamage(int damage)
@@ -578,34 +492,6 @@ public class Pokemon
             damage = 1;
         DecreaseHP(damage);
         StatusChanges.Enqueue($"{Base.Name} was damaged by the recoil!");
-    }
-
-    public float StatusPowerMultiplier(Pokemon attacker, Move move)
-    {
-        float boosts = 1f;
-        if (move.Base.HasFlag(MoveFlag.StatusMultiplier))
-        {
-            foreach (var statBoost in attacker.StatBoosts)
-            {
-                var boost = statBoost.Value;
-
-                if (boost > 0)
-                    boosts++;
-            }
-        }
-
-        return boosts;
-    }
-
-    public float ConsecutivePowerMultiplier(Pokemon attacker, Move move)
-    {
-       if (move.Base.HasFlag(MoveFlag.ConsecutiveMoveUsedMultiplier) && attacker.PrevMoveUsed == move)
-        {
-            SameMoveUsed++;
-            return SameMoveUsed;
-        }
-        else
-            return 1f;
     }
 
     public bool HasType(PokemonType t)
@@ -746,57 +632,6 @@ public class Pokemon
             basePower = Ability.OnBasePower(basePower, attacker, defender, move);
 
         return basePower;
-    }
-
-    public float ModifyAtk(float atk, Pokemon attacker, Move move)
-    {
-        if (Ability?.OnModifyAtk != null)
-            atk = Ability.OnModifyAtk(atk, attacker, this, move);
-
-        if (attacker.HeldItems?.OnModifyAtk != null)
-            atk = attacker.HeldItems.OnModifyAtk(atk, attacker, this, move);
-
-        return atk;
-    }
-
-    public float ModifySpAtk(float atk, Pokemon attacker, Move move)
-    {
-        if (Ability?.OnModifySpAtk != null)
-            atk = Ability.OnModifySpAtk(atk, attacker, this, move);
-
-        return atk;
-    }
-
-    public float ModifyDef(float def, Pokemon attacker, Move move)
-    {
-        if (Ability?.OnModifyDef != null)
-            def = Ability.OnModifyDef(def, attacker, this, move);
-
-        return def;
-    }
-
-    public float ModifySpDef(float def, Pokemon attacker, Move move)
-    {
-        if (Ability?.OnModifySpDef != null)
-            def = Ability.OnModifySpDef(def, attacker, this, move);
-
-        return def;
-    }
-
-    public float ModifySpd(float spd, Pokemon attacker, Move move)
-    {
-        if (Ability?.OnModifySpd != null)
-            spd = Ability.OnModifySpd(spd, attacker, this, move);
-
-        return spd;
-    }
-
-    public float ModifyAcc(float acc, Pokemon attacker, Pokemon defender, Move move)
-    {
-        if (defender.Ability?.OnModifyAcc != null)
-            acc = defender.Ability.OnModifyAcc(acc, attacker, defender, move);
-
-        return acc;
     }
 }
 

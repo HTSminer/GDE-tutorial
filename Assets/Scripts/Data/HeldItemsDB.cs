@@ -167,9 +167,9 @@ public class HeldItemsDB
                 {
                     var statEv = source.StatEffortValues;
 
-                    statEv[Stat.SpDefense] = Mathf.Clamp((statEv[Stat.SpDefense] += 4), 0, GlobalSettings.i.MaxEvPerStat);
+                    statEv[Stat.Special_defense] = Mathf.Clamp((statEv[Stat.Special_defense] += 4), 0, GlobalSettings.i.MaxEvPerStat);
 
-                    return statEv[Stat.SpDefense];
+                    return statEv[Stat.Special_defense];
                 }
             }
         },
@@ -230,9 +230,9 @@ public class HeldItemsDB
                 {
                     var statEv = source.StatEffortValues;
 
-                    statEv[Stat.SpAttack] = Mathf.Clamp((statEv[Stat.SpAttack] += 4), 0, GlobalSettings.i.MaxEvPerStat);
+                    statEv[Stat.Special_attack] = Mathf.Clamp((statEv[Stat.Special_attack] += 4), 0, GlobalSettings.i.MaxEvPerStat);
 
-                    return statEv[Stat.SpAttack];
+                    return statEv[Stat.Special_attack];
                 }
             }
         },
@@ -460,7 +460,7 @@ public class HeldItemsDB
                 Name = "Cheri Berry",
                 OnStatusChanged = (Pokemon pokemon) =>
                 {
-                    if (pokemon.Status.Id == ConditionID.par)
+                    if (pokemon.Status.Id == ConditionID.paralysis)
                     {
                         pokemon.CureStatus();
                         pokemon.StatusChanges.Enqueue($"{pokemon.Base.Name}'s paralysis was cured by its Cheri Berry.");
@@ -476,7 +476,7 @@ public class HeldItemsDB
                 Name = "Chesto Berry",
                 OnStatusChanged = (Pokemon pokemon) =>
                 {
-                    if (pokemon.Status.Id == ConditionID.slp)
+                    if (pokemon.Status.Id == ConditionID.sleep)
                     {
                         pokemon.CureStatus();
                         pokemon.StatusChanges.Enqueue($"{pokemon.Base.Name}'s sleep was cured by its Chesto Berry.");
@@ -492,7 +492,7 @@ public class HeldItemsDB
                 Name = "Pecha Berry",
                 OnStatusChanged = (Pokemon pokemon) =>
                 {
-                    if (pokemon.Status.Id == ConditionID.psn)
+                    if (pokemon.Status.Id == ConditionID.poison)
                     {
                         pokemon.CureStatus();
                         pokemon.StatusChanges.Enqueue($"{pokemon.Base.Name}'s poison was cured by its Pecha Berry.");
@@ -508,7 +508,7 @@ public class HeldItemsDB
                 Name = "Rawst Berry",
                 OnStatusChanged = (Pokemon pokemon) =>
                 {
-                    if (pokemon.Status.Id == ConditionID.psn)
+                    if (pokemon.Status.Id == ConditionID.poison)
                     {
                         pokemon.CureStatus();
                         pokemon.StatusChanges.Enqueue($"{pokemon.Base.Name}'s burn was cured by its Rawst Berry.");
@@ -524,7 +524,7 @@ public class HeldItemsDB
                 Name = "Aspear Berry",
                 OnStatusChanged = (Pokemon pokemon) =>
                 {
-                    if (pokemon.Status.Id == ConditionID.psn)
+                    if (pokemon.Status.Id == ConditionID.poison)
                     {
                         pokemon.CureStatus();
                         pokemon.StatusChanges.Enqueue($"{pokemon.Base.Name}'s freeze was cured by its Aspear Berry.");
@@ -540,7 +540,7 @@ public class HeldItemsDB
                 Name = "Persim Berry",
                 OnStatusChanged = (Pokemon pokemon) =>
                 {
-                    if (pokemon.Status.Id == ConditionID.psn)
+                    if (pokemon.Status.Id == ConditionID.poison)
                     {
                         pokemon.CureStatus();
                         pokemon.StatusChanges.Enqueue($"{pokemon.Base.Name}'s confusion was cured by its Persim Berry.");
@@ -561,23 +561,23 @@ public class HeldItemsDB
 
                     switch (pokemon.Status.Id)
                     {
-                        case ConditionID.psn:
+                        case ConditionID.poison:
                             statusName = "poison";
                             cureableStatus = true;
                             break;
-                        case ConditionID.brn:
+                        case ConditionID.burn:
                             statusName = "burn";
                             cureableStatus = true;
                             break;
-                        case ConditionID.slp:
+                        case ConditionID.sleep:
                             statusName = "sleep";
                             cureableStatus = true;
                             break;
-                        case ConditionID.par:
+                        case ConditionID.paralysis:
                             statusName = "paralysis";
                             cureableStatus = true;
                             break;
-                        case ConditionID.frz:
+                        case ConditionID.freeze:
                             statusName = "freeze";
                             cureableStatus = true;
                             break;
@@ -916,7 +916,7 @@ public class HeldItemsDB
                 {
                     if (pokemon.HP <= pokemon.MaxHp / 4)
                     {
-                        StatBoostEnqueue(Stat.SpAttack, pokemon);
+                        StatBoostEnqueue(Stat.Special_attack, pokemon);
                         NullHeldItem(pokemon);
                     }
                 }
@@ -931,7 +931,7 @@ public class HeldItemsDB
                 {
                     if (pokemon.HP <= pokemon.MaxHp / 4)
                     {
-                        StatBoostEnqueue(Stat.SpDefense, pokemon);
+                        StatBoostEnqueue(Stat.Special_defense, pokemon);
                         NullHeldItem(pokemon);
                     }
                 }
@@ -960,11 +960,11 @@ public class HeldItemsDB
                             statId = "defense";
                             break;
                         case 3:
-                            stat = Stat.SpAttack;
+                            stat = Stat.Special_attack;
                             statId = "special attack";
                             break;
                         case 4:
-                            stat = Stat.SpDefense;
+                            stat = Stat.Special_defense;
                             statId = "special defense";
                             break;
                         case 5:
@@ -1008,7 +1008,7 @@ public class HeldItemsDB
                 {
                     if (move.Base.Category == MoveCategory.Special)
                     {
-                        StatBoostEnqueue(Stat.SpDefense, defender);
+                        StatBoostEnqueue(Stat.Special_defense, defender);
                         NullHeldItem(defender);
                     }
                 }

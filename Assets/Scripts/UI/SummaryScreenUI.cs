@@ -88,7 +88,7 @@ public class SummaryScreenUI : SelectionUI<TextSlot>
         nameText.text = pokemon.Base.name;
         levelText.text = "" + pokemon.Level;
         image.sprite = pokemon.Base.FrontSprite;
-        dexText.text = pokemon.Base.Index.ToString();
+        dexText.text = pokemon.Base.Id.ToString();
         speciesText.text = pokemon.Base.name;
 
         SetType(typeIcon1, pokemon.Base.Type1);

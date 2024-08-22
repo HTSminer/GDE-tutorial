@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class ItemBase : ScriptableObject
 {
+    [SerializeField] private int id;
+    [SerializeField] private MrAmorphic.PokeApiItem pokeApiItem;
+    
     [SerializeField] string itemName;
 
     [TextArea]
@@ -12,18 +15,28 @@ public class ItemBase : ScriptableObject
     [SerializeField] float price;
     [SerializeField] bool isSellable;
 
+    public int Id { get => id; set => id = value; }
+    public MrAmorphic.PokeApiItem PokeApiItem { get => pokeApiItem; set => pokeApiItem = value; }
     public HeldItemID HeldItemId;
-    public virtual string Name => itemName;
-    public string Description => description;
-    public Sprite Icon => icon;
-    public float Price => price;
-    public bool IsSellable => isSellable;
+    public virtual string Name { get => itemName; set => itemName = value; }
+    public string Description {
+        get => description; set => description = value;
+    }
+    public Sprite Icon {
+        get => icon; set => icon = value;
+    }
+    public float Cost {
+        get => price; set => price = value;
+    }
+    public bool IsSellable {
+        get => isSellable; set => isSellable = value;
+    }
 
     public virtual bool Use(Pokemon pokemon) => false;
 
     public virtual float ReduceDamageByType(MoveBase move) => 1f;
 
     public virtual bool IsReusable => false;
-    public virtual bool CanUseInBattle => true;
-    public virtual bool CanUseOutsideBattle => true;
+    public bool CanUseInBattle { get; set; } = true;
+    public bool CanUseOutsideBattle { get; set; } = true;
 }

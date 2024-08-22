@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum ActionType { Move, SwitchPokemon, UseItem, Run }
+public enum ActionType { Move, SwitchPokemon, MegaEvolve, UseItem, Run }
 
 public class BattleAction 
 {

@@ -26,6 +26,6 @@ public class ItemSlotUI : MonoBehaviour
     {
         rectTransform = GetComponent<RectTransform>();
         nameText.text = item.Name;
-        countText.text = $"$ {item.Price}";
+        countText.text = $"$ {item.Cost}";
     }
 }

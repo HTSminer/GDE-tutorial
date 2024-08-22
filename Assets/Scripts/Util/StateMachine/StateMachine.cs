@@ -42,17 +42,27 @@ namespace PKMNUtils.StateMachine
 
         public void Pop()
         {
-            StateStack.Pop();
-            CurrentState.Exit();
-            CurrentState = StateStack.Peek();
+            if (StateStack.Count > 0)
+            {
+                StateStack.Pop().Exit();
+            }
+
+            if (StateStack.Count > 0)
+            {
+                CurrentState = StateStack.Peek();
+            }
+            else
+            {
+                CurrentState = null;
+            }
         }
 
         public void ChangeState(State<T> newState)
         {
             if (CurrentState != null)
             {
-                CurrentState.Exit();
                 StateStack.Pop();
+                CurrentState.Exit();
             }
 
             StateStack.Push(newState);
@@ -65,6 +75,7 @@ namespace PKMNUtils.StateMachine
             var oldState = CurrentState;
             Push(newState);
             yield return new WaitUntil(() => CurrentState == oldState);
+            //Pop();
         }
 
         public State<T> GetPrevState()

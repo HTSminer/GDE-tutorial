@@ -16,7 +16,7 @@ public class MoveSelectionState : State<BattleSystem>
     private void Awake() => i = this;
 
     private bool canMega;
-    private Pokemon pokemonBeforeMega;
+    public Pokemon PokemonBeforeMega { get; set; }
 
     // Outputs
     public List<Move> Moves { get; private set; }
@@ -24,7 +24,6 @@ public class MoveSelectionState : State<BattleSystem>
 
     // References
     private Pokemon _pokemon;
-    private Forms _forms;
     private BattleSystem _battleSystem;
     private ActionSelectionState actionState;
 
@@ -35,16 +34,16 @@ public class MoveSelectionState : State<BattleSystem>
 
         actionState = _battleSystem.GetComponent<ActionSelectionState>();
 
-        moveSelector.gameObject.SetActive(true);
-        moveDetailsUI.SetActive(true);
         moveSelector.SetMoves(_battleSystem.PlayerUnits[actionState.ActionIndex].Pokemon.Moves);
-        Moves = _battleSystem.CurrentUnit.Pokemon.Moves;
-
+        moveSelector.gameObject.SetActive(true);
         moveSelector.OnSelected += OnMoveSelected;
         moveSelector.OnBack += OnBack;
 
+        moveDetailsUI.SetActive(true);
+
+        Moves = _battleSystem.CurrentUnit.Pokemon.Moves;
+
         _pokemon = _battleSystem.CurrentUnit.Pokemon;
-        _forms = _pokemon.CheckForMega(_pokemon.HeldItem);
     }
 
     public override void Execute() => HandleSelection();
@@ -64,24 +63,25 @@ public class MoveSelectionState : State<BattleSystem>
     private void OnMoveSelected(int selected)
     {
         SelectedMove = selected;
-        _battleSystem.StateMachine.Pop();
+        _battleSystem.StateMachine.ChangeState(RunTurnState.i);
     }
-    
-    private void OnBack() => _battleSystem.StateMachine.Pop();
+
+    private void OnBack()
+    {
+        _battleSystem.StateMachine.ChangeState(ActionSelectionState.i);
+    }
 
     public void HandleSelection()
     {
         if (_pokemon.Base.Forms.Count > 0)
         {
-            StartCoroutine(HandleMega());
+            HandleMega();
         }
-        else
-        {
-            moveSelector.HandleUpdate();
-        }
+        
+        moveSelector.HandleUpdate();
     }
 
-    private IEnumerator HandleMega()
+    private void HandleMega()
     {
         if (!_pokemon.isMega && Input.GetKeyDown(KeyCode.LeftShift))
         {
@@ -93,17 +93,15 @@ public class MoveSelectionState : State<BattleSystem>
             moveDetailsUI.SetActive(false);
             _battleSystem.DialogBox.EnableDialogText(true);
 
-            pokemonBeforeMega = _pokemon;
-            _pokemon.isMega = true;
-            canMega = false;
+            var action = new BattleAction()
+            {
+                Type = ActionType.MegaEvolve,
+                User = _battleSystem.CurrentUnit
+            };
+
+            ActionSelectionState.i.AddBattleAction(action);
+
             megaEvoUI.SetActive(canMega);
-
-            yield return _battleSystem.DialogBox.TypeDialog($"{_pokemon.Base.Name}'s {_pokemon.HeldItem.Name} is reacting to the Mega Bracelet!");
-            yield return _battleSystem.CurrentUnit.MegaEvolve(_forms);
-            yield return _battleSystem.DialogBox.TypeDialog($"{_pokemon.Base.Name} Mega Evolved!.");
-            if (_pokemon.isMega) _battleSystem.CurrentUnit.Hud.MegaIcon.gameObject.SetActive(true);
-
-            _battleSystem.StateMachine.Pop();
         }
     }
 

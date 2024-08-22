@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,21 +9,26 @@ public class PokemonBase : ScriptableObject
 {
     [Header("Pokedex Data")]
     [Header("------------------------------------------------------------")]
-    [SerializeField] int index;
+    [SerializeField] private int id;
+    [SerializeField] private MrAmorphic.PokeApiPokemon pokeApiPokemon;
     [SerializeField] string speciesName;
     [SerializeField] string formName;
     [SerializeField] string speciesText;
-    [SerializeField] float height;
-    [SerializeField] float weight;
-
-    [SerializeField] List<AbilityID> abilities;
-    [SerializeField] List<AbilityID> hAbilities;
-
+    [TextArea]
+    [SerializeField] string description;
+    [SerializeField] int height;
+    [SerializeField] int weight;
+    [SerializeField] bool isBaby;
+    [SerializeField] bool isLegendary;
+    [SerializeField] bool isMythical;
     [SerializeField] PokemonType type1;
     [SerializeField] PokemonType type2;
 
-    [TextArea]
-    [SerializeField] string description;
+    [field: Space(25)]
+    [Header("Abilities")]
+    [Header("------------------------------------------------------------")]
+    [SerializeField] List<AbilityInfo> abilities;
+
 
     [field: Space(50)]
     [Header("Forms")]
@@ -56,12 +62,7 @@ public class PokemonBase : ScriptableObject
     [field: Space(50)]
     [Header("Training")]
     [Header("------------------------------------------------------------")]
-    [SerializeField] int hitPointsEvYield = 0;
-    [SerializeField] int attackEvYield = 0;
-    [SerializeField] int defenseEvYield = 0;
-    [SerializeField] int spAttackEvYield = 0;
-    [SerializeField] int spDefenseEvYield = 0;
-    [SerializeField] int speedEvYield = 0;
+    [SerializeField] List<EarnableEV> evYield;
     [SerializeField] int catchRate = 255;
     [SerializeField] int friendship = 70;
     [SerializeField] int expYield;
@@ -79,7 +80,7 @@ public class PokemonBase : ScriptableObject
     [Header("------------------------------------------------------------")]
     [SerializeField] List<LearnableMoves> learnableMoves;
     [SerializeField] List<MoveBase> learnableByItems;
-    [SerializeField] List<BreedingMoves> learnableByBreeding;
+    [SerializeField] List<MoveBase> learnableByBreeding;
 
     [field: Space(50)]
     [Header("Evolutions")]
@@ -95,15 +96,15 @@ public class PokemonBase : ScriptableObject
 
     public static int MaxNumberOfMoves { get; set; } = 4;
 
-    public Dictionary<Stat, int> EvYields => new Dictionary<Stat, int>() 
-    {
-        { Stat.HitPoints, hitPointsEvYield },
-        { Stat.Attack, attackEvYield },
-        { Stat.Defense, defenseEvYield },
-        { Stat.SpAttack, spAttackEvYield },
-        { Stat.SpDefense, spDefenseEvYield },
-        { Stat.Speed, speedEvYield }
-    };
+    //public Dictionary<Stat, int> EvYields => new Dictionary<Stat, int>() 
+    //{
+    //    { Stat.HitPoints, hitPointsEvYield },
+    //    { Stat.Attack, attackEvYield },
+    //    { Stat.Defense, defenseEvYield },
+    //    { Stat.Special_attack, spAttackEvYield },
+    //    { Stat.Special_defense, spDefenseEvYield },
+    //    { Stat.Speed, speedEvYield }
+    //};
 
     public int GetExpForLevel(int level)
     {
@@ -115,57 +116,75 @@ public class PokemonBase : ScriptableObject
 
     public AbilityID GetRandomAbility()
     {
-        var abilities = Abilities.Where(a => a > 0).ToList();
-        int r = Random.Range(0, abilities.Count);
-        return Abilities[r];
+        var filteredAbilities = Abilities.Where(a => a.Ability > AbilityID.none).Select(a => a.Ability).ToList();
+        if (filteredAbilities.Count == 0)
+        {
+            throw new InvalidOperationException("No abilities available");
+        }
+
+        int r = UnityEngine.Random.Range(0, filteredAbilities.Count);
+        return filteredAbilities[r];
     }
 
 
-    public int Index => index;
-    public string Name => speciesName;
+    public int Id { get => id; set => id = value; }
+    public MrAmorphic.PokeApiPokemon PokeApiPokemon { get => pokeApiPokemon; set => pokeApiPokemon = value; }
+    public string Name { get => speciesName; set => speciesName = value; }
     public string FormName => formName;
     public string Species => speciesText;
-    public float Height => height;
-    public float Weight => weight;
-    public List<AbilityID> Abilities => abilities;
-    public List<AbilityID> HAbilities => hAbilities;
-    public PokemonType Type1
-    {
-        get => type1;
-        set => type1 = value;
-    }
-    public PokemonType Type2
-    {
-        get => type2;
-        set => type2 = value;
-    }
-    public string Description => description;
+    public int Height { get => height; set => height = value; }
+    public int Weight { get => weight; set => weight = value; }
+    public bool IsBaby { get => isBaby; set => isBaby = value; }
+    public bool IsLegendary { get => isLegendary; set => isLegendary = value; }
+    public bool IsMythical { get => isMythical; set => isMythical = value; }
+    public List<AbilityInfo> Abilities { get => abilities; set => abilities = value; }
+    public PokemonType Type1 { get => type1; set => type1 = value; }
+    public PokemonType Type2 { get => type2; set => type2 = value; }
+    public string Description { get => description; set => description = value; }
 
     public Sprite FrontSprite { get => frontSprite; set => frontSprite = value; }
-    public Sprite BackSprite => backSprite;
+    public Sprite BackSprite { get => backSprite; set => backSprite = value; }
 
-    public int MaxHp => maxHp;
-    public int Attack => attack;
-    public int Defense => defense;
-    public int SpAttack => spAttack;
-    public int SpDefense => spDefense;
-    public int Speed => speed;
+    public int MaxHp { get => maxHp; set => maxHp = value; }
+    public int Attack { get => attack; set => attack = value; }
+    public int Defense { get => defense; set => defense = value; }
+    public int SpAttack { get => spAttack; set => spAttack = value; }
+    public int SpDefense { get => spDefense; set => spDefense = value; }
+    public int Speed { get => speed; set => speed = value; }
 
-    public int CatchRate => catchRate;
-    public int Friendship => friendship;
-    public int ExpYield => expYield;
+    public List<EarnableEV> EvYield { get => evYield; set => evYield = value; }
 
+    //public int HP_EV { get => hitPointsEvYield; set => hitPointsEvYield = value; }
+    //public int ATK_EV { get => attackEvYield; set => attackEvYield = value; }
+    //public int DEF_EV { get => defenseEvYield; set => defenseEvYield = value; }
+    //public int SPA_EV { get => spAttackEvYield; set => spAttackEvYield = value; }
+    //public int SPD_EV { get => spDefenseEvYield; set => spDefenseEvYield = value; }
+    //public int SPE_EV { get => speedEvYield; set => speedEvYield = value; }
+
+    public int CatchRate { get => catchRate; set => catchRate = value; }
+    public int Friendship { get => friendship; set => friendship = value; }
+    public int ExpYield { get => expYield; set => expYield = value; }
+
+    public GrowthRateID GrowthRateId { get => growthRate; set => growthRate = value; }
     public GrowthRate GrowthRate => GrowthRate.GetGrowthRate(growthRate);
 
-    public List<LearnableMoves> LearnableMoves => learnableMoves;
-    public List<MoveBase> LearnableByItems => learnableByItems;
-    public List<BreedingMoves> LearnableByBreeding => learnableByBreeding;
+    public List<LearnableMoves> LearnableMoves { get => learnableMoves; set => learnableMoves = value; }
+    public List<MoveBase> LearnableByItems { get => learnableByItems; set => learnableByItems = value; }
+    public List<MoveBase> LearnableByBreeding {
+        get => learnableByBreeding; set => learnableByBreeding = value;
+    }
 
-    public List<Forms> Forms => forms;
-    public List<Evolution> Evolutions => evolutions;
-    public List<EggGroups> EggGroup => eggGroup;
-    public int EggCycles => eggCycles;
-    public PokemonGenderRatio GenderRatio => genderRatio;
+    public List<Forms> Forms {
+        get => forms; set => forms = value;
+    }
+    public List<Evolution> Evolutions {
+        get => evolutions; set => evolutions = value;
+    }
+    public List<EggGroups> EggGroup {
+        get => eggGroup; set => eggGroup = value;
+    }
+    public int EggCycles { get => eggCycles; set => eggCycles = value; }
+    public PokemonGenderRatio GenderRatio { get => genderRatio; set => genderRatio = value; }
 
     public List<Sprite> WalkDownSprites
     {
@@ -187,9 +206,19 @@ public class PokemonBase : ScriptableObject
         get => rightSprite; set => rightSprite = value;
     }
 
-    public ItemBase CItem => cItem;
-    public ItemBase RItem => rItem;
-    public ItemBase SItem => sItem;
+    public ItemBase CItem { get => cItem; set => cItem = value; }
+    public ItemBase RItem { get => rItem; set => rItem = value; }
+    public ItemBase SItem { get => sItem; set => sItem = value; }
+}
+
+[System.Serializable]
+public class AbilityInfo
+{
+    public AbilityID ability;
+    public bool isHidden;
+
+    public AbilityID Ability { get => ability; set => ability = value; }
+    public bool IsHidden { get => isHidden; set => isHidden = value; }
 }
 
 [System.Serializable]
@@ -198,24 +227,29 @@ public class LearnableMoves
     [SerializeField] MoveBase moveBase;
     [SerializeField] int level;
 
-    public MoveBase Base
-    {
-        get { return moveBase; }
-    }
+    public MoveBase Base { get => moveBase; set => moveBase = value; }
 
-    public int Level
-    {
-        get { return level; }
-    }
+    public int Level { get => level; set => level = value; }
 }
+
+public enum Weather { None, Sunny, Rain, Sandstorm }
 
 [System.Serializable]
-public class MoveParent
+public class EarnableEV
 {
-    [SerializeField] PokemonBase parent;
-}
+    [SerializeField] Stat statAttribute;
+    [Range(1, 3)]
+    [SerializeField] int statValue;
 
-public enum Weather { Sunny, Rain, Sandstorm }
+    public Stat StatAttribute => statAttribute;
+    public int StatValue => statValue;
+
+    public EarnableEV(Stat stat, int value)
+    {
+        statAttribute = stat;
+        statValue = value;
+    }
+}
 
 [System.Serializable]
 public class Evolution
@@ -224,19 +258,21 @@ public class Evolution
     [SerializeField] int requiredLevel;
     [SerializeField] EvolutionItem requiredItem;
     [SerializeField] EvolutionItem heldItem;
+    [SerializeField] PokemonBase requiredPokemon;
     [SerializeField] TimeOfDay timeOfDay;
     [SerializeField] Places location;
     [SerializeField] Weather weather;
-    [SerializeField] Gender gender;
+    [SerializeField] PokemonGender gender;
 
-    public PokemonBase EvolvesInto => evolvesInto;
-    public int RequiredLevel => requiredLevel;
-    public EvolutionItem RequiredItem => requiredItem;
-    public EvolutionItem HeldItem => heldItem;
-    public TimeOfDay TimeOfDay => timeOfDay;
-    public Places Location => location;
-    public Weather Weather => weather;
-    public Gender Gender => gender;
+    public PokemonBase EvolvesInto { get => evolvesInto; set => evolvesInto = value; }
+    public int RequiredLevel { get => requiredLevel; set => requiredLevel = value; }
+    public EvolutionItem RequiredItem { get => requiredItem; set => requiredItem = value; }
+    public EvolutionItem HeldItem { get => heldItem; set => heldItem = value; }
+    public PokemonBase RequiredPokemon { get => requiredPokemon; set => requiredPokemon = value; }
+    public TimeOfDay TimeOfDay { get => timeOfDay; set => timeOfDay = value; }
+    public Places Location { get => location; set => location = value; }
+    public Weather Weather { get => weather; set => weather = value; }
+    public PokemonGender Gender { get => gender; set => gender = value; }
 }
 
 [System.Serializable]
@@ -255,37 +291,25 @@ public enum PokemonType
     Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, Fairy 
 }
 
-public enum Stat { Attack, Defense, SpAttack, SpDefense, Speed, Accuracy, Evasion, HitPoints }
+public enum Stat { Attack, Defense, Special_attack, Special_defense, Speed, Accuracy, Evasion, HitPoints }
 
 public enum PokemonGenderRatio 
 { 
     OneInTwoFemale, OneInFourFemale, OneInEightFemale, ThreeInFourFemale,
-    SevenInEightFemale, FemaleOnly, MaleOnly, Genderless, Ditto
+    SevenInEightFemale, FemaleOnly, MaleOnly, Genderless, Ditto 
 }
 
 public enum PokemonGender { NotSet, Female, Male, Genderless, Ditto }
 
-public enum Gender { none, Male, Female, Ditto }
-
 public enum EggGroups 
 { 
-    none, Monster, HumanLike, Water1, Water2, Water3, Bug, Mineral, Flying, Amorphous,
-    Field, Fairy, Ditto, Grass, Dragon, Unknown
+    no_eggs, monster, humanshape, water1, water2, water3, bug, mineral, flying,
+    fairy, ditto, grass, dragon, ground, unknown, plant, indeterminate
 }
 
 public enum TimeOfDay { None, Morning, Day, Night }
 
 public enum Places { none, Grassy_Rock }
-
-[System.Serializable]
-public class EvYield
-{
-    [SerializeField] Stat stat;
-    [SerializeField] int yield;
-
-    public Stat Stat => stat;
-    public int Yield => yield;
-}
 
 public class TypeChart
 {

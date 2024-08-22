@@ -1,4 +1,5 @@
 using PKMNUtils.StateMachine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,8 @@ public class RunTurnState : State<BattleSystem>
 
     // Outputs
     public BattleUnit UnitToSwitch { get; set; }
+    public BattleUnit CurrentAttacker { get; set; }
+    public BattleUnit CurrentDefender { get; set; }
 
     // References
     private List<BattleUnit> _playerUnits;
@@ -40,52 +43,45 @@ public class RunTurnState : State<BattleSystem>
         StartCoroutine(RunTurns());
     }
 
+    public override void Exit()
+    {
+        _dialogBox.SetDialog($"Choose an action for {_playerUnits[0].Pokemon.Base.Name}");
+    }
+
     private IEnumerator RunTurns()
     {
         var actionsToProcess = new List<BattleAction>(_battleSystem.Actions);
 
-        foreach (var action in actionsToProcess)
+        for (int i =0; i < actionsToProcess.Count; i++)
         {
-            if (action.IsInvalid)
-                continue;
+            var action = actionsToProcess[i];
 
-            if (action.Type == ActionType.Move)
+            if (action.IsInvalid) continue;
+
+            if (action.Type == ActionType.SwitchPokemon)
             {
-                yield return RunMove(action.User, action.Target, action.Move);
-                //yield return RunAfterTurn(action.User, action.Target, action.Move);
-            }
-            else if (action.Type == ActionType.SwitchPokemon)
-            {
+                var opponentAction = actionsToProcess.FirstOrDefault(a => a.User != action.User && a.Type == ActionType.Move);
+                if (opponentAction != null && opponentAction.Move.Base.Name == "Pursuit")
+                {
+                    yield return RunMove(opponentAction.User, opponentAction.Target, opponentAction.Move);
+                    actionsToProcess.Remove(opponentAction);
+
+                    if (i >= actionsToProcess.Count) break;
+                }
+
                 yield return _battleSystem.SwitchPokemon(action.User, action.SelectedPokemon);
             }
-            else if (action.Type == ActionType.UseItem)
+            else if (action.Type == ActionType.MegaEvolve)
             {
-                yield return UseItem();
+                yield return _battleSystem.MegaEvolution(action.User.Pokemon);
             }
-            else if(action.Type == ActionType.Run)
+            else if (action.Type == ActionType.Move)
             {
-                yield return TryToEscape();
+                yield return RunMove(action.User, action.Target, action.Move);
             }
 
-            if (_battleSystem.IsBattleOver)
-            {
-                yield break;
-            }
+            if (_battleSystem.IsBattleOver) yield break;
         }
-
-        foreach (var action in _battleSystem.Actions)
-        {
-            if (action.IsInvalid) continue;
-            yield return RunAfterTurn(action.User, action.Target, action.Move);
-        }
-
-        var faintedPlayerUnits = _battleSystem.PlayerUnits.Where(u => u.Pokemon.HP <= 0);
-        foreach (var unit in faintedPlayerUnits)
-            yield return CheckFaintedAfterTurn(unit);
-
-        var faintedEnemyUnits = _battleSystem.EnemyUnits.Where(u => u.Pokemon.HP <= 0);
-        foreach (var unit in faintedEnemyUnits)
-            yield return CheckFaintedAfterTurn(unit);
 
         yield return WeatherEffects();
 
@@ -93,6 +89,63 @@ public class RunTurnState : State<BattleSystem>
         _actionState.ActionIndex = 0;
         _battleSystem.StateMachine.Pop();
     }
+
+    //private IEnumerator RunTurns()
+    //{
+    //    var actionsToProcess = new List<BattleAction>(_battleSystem.Actions);
+
+    //    foreach (var action in actionsToProcess)
+    //    {
+    //        if (action.IsInvalid)
+    //            continue;
+
+    //        if (action.Type == ActionType.Move)
+    //        {
+    //            CurrentAttacker = action.User;
+    //            CurrentDefender = action.Target;
+    //            action.User.Pokemon.CurrentMove = action.Move;
+    //            yield return RunMove(CurrentAttacker, CurrentDefender, action.Move);
+    //            //yield return RunAfterTurn(action.User, action.Target, action.Move);
+    //        }
+    //        else if (action.Type == ActionType.SwitchPokemon)
+    //        {
+    //            yield return _battleSystem.SwitchPokemon(action.User, action.SelectedPokemon);
+    //        }
+    //        else if (action.Type == ActionType.UseItem)
+    //        {
+    //            yield return UseItem();
+    //        }
+    //        else if(action.Type == ActionType.Run)
+    //        {
+    //            yield return TryToEscape();
+    //        }
+
+    //        if (_battleSystem.IsBattleOver)
+    //        {
+    //            yield break;
+    //        }
+    //    }
+
+    //    var faintedPlayerUnits = _battleSystem.PlayerUnits.Where(u => u.Pokemon.HP <= 0);
+    //    foreach (var unit in faintedPlayerUnits)
+    //        yield return CheckFaintedAfterTurn(unit);
+
+    //    var faintedEnemyUnits = _battleSystem.EnemyUnits.Where(u => u.Pokemon.HP <= 0);
+    //    foreach (var unit in faintedEnemyUnits)
+    //        yield return CheckFaintedAfterTurn(unit);
+
+    //    foreach (var action in _battleSystem.Actions)
+    //    {
+    //        if (action.IsInvalid) continue;
+    //        yield return RunAfterTurn(action.User, action.Target, action.Move);
+    //    }
+
+    //    yield return WeatherEffects();
+
+    //    _battleSystem.Actions.Clear();
+    //    _actionState.ActionIndex = 0;
+    //    _battleSystem.StateMachine.Pop();
+    //}
 
     private IEnumerator CheckFaintedAfterTurn(BattleUnit faintedUnit)
     {
@@ -178,6 +231,7 @@ public class RunTurnState : State<BattleSystem>
             if (!isTrainerBattle)
             {
                 _battleSystem.BattleOver(true);
+                _battleSystem.StateMachine.Pop();
                 yield break;
             }
 
@@ -294,6 +348,10 @@ public class RunTurnState : State<BattleSystem>
 
     private IEnumerator RunMove(BattleUnit sourceUnit, BattleUnit targetUnit, Move move)
     {
+        CurrentAttacker = sourceUnit;
+        CurrentDefender = targetUnit;
+        CurrentAttacker.Pokemon.CurrentMove = move;
+
         if (!CanRunMove(sourceUnit, targetUnit, move))
             yield break;
 
@@ -313,15 +371,15 @@ public class RunTurnState : State<BattleSystem>
 
         sourceUnit.Pokemon.OnAfterMove(move, targetUnit.Pokemon, sourceUnit.Pokemon);
         sourceUnit.Pokemon.FirstTurn = false;
+        yield break;
     }
 
     private IEnumerator MoveHits(BattleUnit sourceUnit, BattleUnit targetUnit, Move move)
     {
         var damageDetails = new DamageDetails();
+        float typeEff = 1f;
 
         int hitCount = move.Base.GetHitCount();
-
-        float typeEff = 1f;
         int hits = 1;
 
         for (int i = 1; i <= hitCount; i++)
@@ -348,21 +406,21 @@ public class RunTurnState : State<BattleSystem>
             }
             else
             {
-                //yield return InflictDamage(sourceUnit, targetUnit, move);
-                damageDetails = targetUnit.Pokemon.TakeDamage(move, sourceUnit.Pokemon, _battleSystem.Field.Weather);
+                yield return _battleSystem.StateMachine.PushAndWait(TakeDamageState.i);
+                damageDetails = TakeDamageState.i.DamageDetails;
+                typeEff = damageDetails.TypeEffectiveness;
+
                 yield return targetUnit.Hud.WaitForHPUpdate();
                 yield return ShowCriticalHit(damageDetails);
-                typeEff = damageDetails.TypeEffectiveness;
             }
 
             targetUnit.Pokemon.HeldItems?.OnHpChanged?.Invoke(targetUnit.Pokemon);
 
             if (move.Base.Secondaries != null && move.Base.Secondaries.Count > 0 && targetUnit.Pokemon.HP > 0)
             {
-                // yield return ApplySecondaryEffects(sourceUnit, targetUnit, move);
                 foreach (var secondary in move.Base.Secondaries)
                 {
-                    var rnd = Random.Range(1, 101);
+                    var rnd = UnityEngine.Random.Range(1, 101);
                     if (rnd <= secondary.Chance)
                         yield return RunMoveEffects(secondary, sourceUnit.Pokemon, targetUnit.Pokemon, secondary.Target, move.Base);
                 }
@@ -371,7 +429,7 @@ public class RunTurnState : State<BattleSystem>
             yield return RunAfterMove(damageDetails, move.Base, sourceUnit.Pokemon, targetUnit.Pokemon);
 
             hits = i;
-            if (targetUnit.Pokemon.HP <= 0) 
+            if (targetUnit.Pokemon.HP <= 0)
                 break;
         }
 
@@ -485,22 +543,21 @@ public class RunTurnState : State<BattleSystem>
     private IEnumerator RunAfterTurn(BattleUnit sourceUnit, BattleUnit targetUnit, Move move)
     {
         if (_battleSystem.IsBattleOver) yield break;
+        if (sourceUnit == null || sourceUnit.Pokemon == null) yield break;
+        if (targetUnit == null || targetUnit.Pokemon == null) yield break;
 
         // Statuses like burn or psn will hurt the pokemon after the turn
         sourceUnit.Pokemon.OnAfterTurn(sourceUnit.Pokemon, targetUnit.Pokemon);
         yield return ShowStatusChanges(sourceUnit.Pokemon);
         yield return sourceUnit.Hud.WaitForHPUpdate();
         yield return targetUnit.Hud.WaitForHPUpdate();
-        if (sourceUnit.Pokemon.HP <= 0)
-        {
-            yield return HandlePokemonFainted(sourceUnit, targetUnit, move);
-        }
+
+        if (sourceUnit.Pokemon.HP <= 0) yield return HandlePokemonFainted(sourceUnit, targetUnit, move);
     }
 
     private bool CheckIfMoveHits(Move move, Pokemon source, Pokemon target)
     {
-        if (move.Base.AlwaysHits)
-            return true;
+        if (move.Base.AlwaysHits) return true;
 
         float moveAccuracy = move.Base.Accuracy;
 
@@ -519,7 +576,7 @@ public class RunTurnState : State<BattleSystem>
         else
             moveAccuracy *= boostValues[-evasion];
 
-        moveAccuracy = source.ModifyAcc(moveAccuracy, source, target, move);
+        moveAccuracy = TakeDamageState.i.ModifyAcc(moveAccuracy, source, target);
 
         return UnityEngine.Random.Range(1, 101) <= moveAccuracy;
     }
@@ -558,7 +615,7 @@ public class RunTurnState : State<BattleSystem>
             {
                 var playerUnit = _playerUnits[i];
 
-                playerUnit.Pokemon.GainEvs(faintedUnit.Pokemon.Base.EvYields);
+                //playerUnit.Pokemon.GainEvs(faintedUnit.Pokemon.Base.EvYields);
 
                 // Exp Gain
                 int expGain = CalculateExpGain(faintedUnit);
@@ -666,10 +723,20 @@ public class RunTurnState : State<BattleSystem>
 
     private IEnumerator ShowEffectiveness(float typeEff)
     {
-        if (typeEff > 1f)
-            yield return _dialogBox.TypeDialog("It's super effective!");
-        else if (typeEff < 1f)
-            yield return _dialogBox.TypeDialog("It's not very effective!");
+        switch (typeEff)
+        {
+            case 2f:
+                yield return _dialogBox.TypeDialog("It's super effective!");
+                break;
+            case 0.5f:
+                yield return _dialogBox.TypeDialog("It's not very effective!");
+                break;
+            case 0f:
+                yield return _dialogBox.TypeDialog("It has no effect!");
+                break;
+            default:
+                break;
+        }
     }
 
     private IEnumerator TryToEscape()
@@ -695,7 +762,7 @@ public class RunTurnState : State<BattleSystem>
             float f = (playerSpeed * 128) / enemySpeed + 30 * _battleSystem.EscapeAttempts;
             f = f % 256;
 
-            if (Random.Range(0, 256) < f)
+            if (UnityEngine.Random.Range(0, 256) < f)
             {
                 yield return _dialogBox.TypeDialog($"Ran away safely.");
                 _battleSystem.BattleOver(true);

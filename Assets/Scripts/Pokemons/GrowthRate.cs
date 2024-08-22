@@ -38,7 +38,7 @@ public class GrowthRate : MonoBehaviour
     {
         try
         {
-            Register(MediumSlow);
+            Register(Medium);
             Register(Erratic);
             Register(Fluctuating);
             Register(MediumFast);
@@ -153,9 +153,9 @@ public class GrowthRate : MonoBehaviour
     }
 
 
-    public static readonly GrowthRate MediumSlow = new GrowthRate(
+    public static readonly GrowthRate Medium = new GrowthRate(
         0,
-        "MediumSlow",
+        "Medium",
         new List<int>
         {
             -1, 0, 9, 57, 96, 135, 179, 236, 314, 419, 560,
@@ -268,16 +268,4 @@ public class GrowthRate : MonoBehaviour
     );
 }
 
-public enum GrowthRateID { Erratic, MediumSlow, Fluctuating, MediumFast, Fast, Slow }
-
-
-
-
-// IMPLEMENTATION
-
-// Edited GlobalSettings - Added MaxLevel
-// Edited RunTurnState - HandleExpGain.
-// Edited Pokemon - CheckForLevelUp, GetNormalizedExp
-// Edited PokemonBase - GetExpForLevel
-    // - Added GrowthRateID Serialize Field
-    // - Added GrowthRate property
+public enum GrowthRateID { erratic, medium_slow, fluctuating, medium, fast, slow }

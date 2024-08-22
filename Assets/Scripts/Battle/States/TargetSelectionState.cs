@@ -17,9 +17,6 @@ public class TargetSelectionState : State<BattleSystem>
     private BattleSystem _battleSystem;
     private ActionSelectionState _actionState;
 
-    // Events
-    private event Action<int> OnSelected;
-
     public override void Enter(BattleSystem owner)
     {
         _battleSystem = owner;
@@ -61,7 +58,7 @@ public class TargetSelectionState : State<BattleSystem>
 
             _battleSystem.StateMachine.Pop();
             _actionState.ActionIndex = Mathf.Clamp(_actionState.ActionIndex++, 0, _battleSystem.UnitCount - 1);
-            StartCoroutine(_actionState.AddBattleAction(action));
+            _actionState.AddBattleAction(action);
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {

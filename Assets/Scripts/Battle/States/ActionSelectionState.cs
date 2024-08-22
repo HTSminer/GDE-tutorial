@@ -12,13 +12,12 @@ public class ActionSelectionState : State<BattleSystem>
     public static ActionSelectionState i { get; private set; }
     private void Awake() => i = this;
 
-    private Pokemon selectedPokemon;
-
     // Outputs
     public int ActionIndex { get; set; }
 
     // References
     private BattleSystem _battleSystem;
+    private Pokemon selectedPokemon;
 
     public override void Enter(BattleSystem owner)
     {
@@ -81,6 +80,7 @@ public class ActionSelectionState : State<BattleSystem>
 
         yield return _battleSystem.StateMachine.PushAndWait(MoveSelectionState.i);
         var selectedMove = MoveSelectionState.i.Moves[MoveSelectionState.i.SelectedMove];
+        actionSelection.SelectedItem = 0;
         if (selectedMove != null)
         {
             _battleSystem.CurrentUnit.Pokemon.CurrentMove = selectedMove;
@@ -93,7 +93,6 @@ public class ActionSelectionState : State<BattleSystem>
                 _battleSystem.CurrentUnit = currentUnit;
 
                 _battleSystem.DialogBox.SetDialog($"Choose an action for {currentUnit.Pokemon.Base.Name}");
-                actionSelection.SelectedItem = 0;
             }
             else
             {
@@ -105,7 +104,7 @@ public class ActionSelectionState : State<BattleSystem>
                     Move = selectedMove
                 };
 
-                yield return AddBattleAction(action);
+                AddBattleAction(action);
             }
         }
 
@@ -125,7 +124,7 @@ public class ActionSelectionState : State<BattleSystem>
                 SelectedPokemon = selectedPokemon
             };
 
-            yield return AddBattleAction(action);
+            AddBattleAction(action);
         }
     }
 
@@ -143,11 +142,11 @@ public class ActionSelectionState : State<BattleSystem>
                 User = BattleSystem.i.CurrentUnit
             };
 
-            yield return AddBattleAction(action);
+            AddBattleAction(action);
         }
     }
 
-    public IEnumerator AddBattleAction(BattleAction action)
+    public void AddBattleAction(BattleAction action)
     {
         _battleSystem.Actions.Add(action);
 
@@ -170,7 +169,7 @@ public class ActionSelectionState : State<BattleSystem>
             ActionIndex = 0;
 
             _battleSystem.Actions = _battleSystem.Actions.OrderByDescending(a => a.Priority).ThenByDescending(a => a.User.Pokemon.Speed).ToList();
-            yield return _battleSystem.StateMachine.PushAndWait(RunTurnState.i);
+            _battleSystem.StateMachine.Push(RunTurnState.i);
         }
     }
 }

@@ -63,12 +63,12 @@ public class ShopBuyingState : State<GameController>
             waitForInput: false, autoClose: false);
 
         int countToBuy = 1;
-        yield return countSelectorUI.ShowSelector(100, item.Price,
+        yield return countSelectorUI.ShowSelector(100, item.Cost,
             (selectedCount) => countToBuy = selectedCount);
 
         DialogManager.i.CloseDialog();
 
-        float totalPrice = item.Price * countToBuy;
+        float totalPrice = item.Cost * countToBuy;
 
         if (Wallet.i.HasMoney(totalPrice))
         {

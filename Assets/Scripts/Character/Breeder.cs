@@ -251,7 +251,7 @@ public class Breeder : MonoBehaviour
 
         int inheritedIVCount = parent1HasKnot || parent2HasKnot ? 5 : 3;
 
-        Stat[] ivStats = { Stat.HitPoints, Stat.Attack, Stat.Defense, Stat.SpAttack, Stat.SpDefense, Stat.Speed };
+        Stat[] ivStats = { Stat.HitPoints, Stat.Attack, Stat.Defense, Stat.Special_attack, Stat.Special_defense, Stat.Speed };
 
         for (int i = 0; i < inheritedIVCount; i++)
         {

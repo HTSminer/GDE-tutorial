@@ -88,7 +88,7 @@ public class PartyState : State<GameController>
                     SelectedPokemon = SelectedPokemon
                 };
 
-                yield return ActionSelectionState.i.AddBattleAction(action);
+                ActionSelectionState.i.AddBattleAction(action);
 
                 _gameController.StateMachine.Pop();
             }

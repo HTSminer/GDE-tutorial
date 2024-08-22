@@ -1032,7 +1032,6 @@ MonoBehaviour:
   hud: {fileID: 7623202184786670754}
   megaAnim: {fileID: 0}
   megaFrames: []
-  frameDur: 0.2
 --- !u!1 &2075936546126083703
 GameObject:
   m_ObjectHideFlags: 0
@@ -1125,7 +1124,6 @@ MonoBehaviour:
   hud: {fileID: 632318732044439369}
   megaAnim: {fileID: 0}
   megaFrames: []
-  frameDur: 0.2
 --- !u!1 &2102297090682533968
 GameObject:
   m_ObjectHideFlags: 0
@@ -1392,6 +1390,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
+  maxLevel: 100
   maxEvs: 510
   maxEvPerStat: 252
 --- !u!114 &3039578057669640895
@@ -3903,7 +3902,6 @@ MonoBehaviour:
   hud: {fileID: 8946721932115472220}
   megaAnim: {fileID: 0}
   megaFrames: []
-  frameDur: 0.2
 --- !u!1 &5828925398938442976
 GameObject:
   m_ObjectHideFlags: 0
@@ -4657,7 +4655,6 @@ MonoBehaviour:
   - {fileID: -658868623, guid: c6be8fff51be9d44390ed1ff442d5bfc, type: 3}
   - {fileID: -1447252431, guid: c6be8fff51be9d44390ed1ff442d5bfc, type: 3}
   - {fileID: 1477280512, guid: c6be8fff51be9d44390ed1ff442d5bfc, type: 3}
-  frameDur: 0.2
 --- !u!1 &6825922811225224650
 GameObject:
   m_ObjectHideFlags: 0
@@ -5592,7 +5589,6 @@ MonoBehaviour:
   hud: {fileID: 4039926492043746024}
   megaAnim: {fileID: 0}
   megaFrames: []
-  frameDur: 0.2
 --- !u!1 &8264602735969055509
 GameObject:
   m_ObjectHideFlags: 0
@@ -5608,6 +5604,7 @@ GameObject:
   - component: {fileID: 3371447300039671570}
   - component: {fileID: 6064780773182739910}
   - component: {fileID: 1277827952411858804}
+  - component: {fileID: 8319465157653786925}
   m_Layer: 0
   m_Name: BattleSystem
   m_TagString: Untagged
@@ -5689,7 +5686,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d79a3bb22914cdb48abfa579878edc66, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectionUI: {fileID: 5776292054532076165}
+  actionSelection: {fileID: 0}
 --- !u!114 &6405485789040080627
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5702,7 +5699,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ba6cffa68c936e40b163b1a7feb62e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectionUI: {fileID: 5575379118406051717}
+  moveSelector: {fileID: 0}
   moveDetailsUI: {fileID: 4102705467340670155}
   megaEvoUI: {fileID: 4245721512687140318}
 --- !u!114 &3371447300039671570
@@ -5739,6 +5736,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a687d37ccc15b06428e31d1e19237f47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &8319465157653786925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8264602735969055509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e412f2cc3b1987449efd32964030423, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &8292021950779309902
@@ -6043,7 +6052,6 @@ MonoBehaviour:
   hud: {fileID: 6060049506795948330}
   megaAnim: {fileID: 0}
   megaFrames: []
-  frameDur: 0.2
 --- !u!1 &8943626682368496076
 GameObject:
   m_ObjectHideFlags: 0

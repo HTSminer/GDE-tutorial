@@ -58,7 +58,7 @@ public class ShopSellingState : State<GameController>
 
         walletUI.Show();
 
-        float sellingPrice = Mathf.Round(item.Price / 2);
+        float sellingPrice = Mathf.Round(item.Cost / 2);
         int countToSell = 1;
 
         int itemCount = inventory.GetItemCount(item);

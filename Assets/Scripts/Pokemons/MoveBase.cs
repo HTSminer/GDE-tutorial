@@ -6,6 +6,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Move", menuName = "Pokemon/Create new Move")]
 public class MoveBase : ScriptableObject
 {
+    [SerializeField] private int id;
+    [SerializeField] private MrAmorphic.PokeApiMove pokeApiMove;
     [SerializeField] string moveName;
 
     [TextArea]
@@ -14,6 +16,7 @@ public class MoveBase : ScriptableObject
     [SerializeField] PokemonType type;
     [SerializeField] MoveCategory category;
     [SerializeField] CritBehavior critBehavior;
+    [SerializeField] PowerBasedOn powerBasedOn = PowerBasedOn.value;
 
     [SerializeField] int power;
     [SerializeField] int accuracy;
@@ -35,32 +38,52 @@ public class MoveBase : ScriptableObject
 
     [SerializeField] AudioClip sound;
 
-    public string Name => moveName;
-    public string Description => description;
+    public int Id { get => id; set => id = value; }
+    public MrAmorphic.PokeApiMove PokeApiMove { get => pokeApiMove; set => pokeApiMove = value; }
+    public string Name { get => moveName; set => moveName = value; }
+    public string Description { get => description; set => description = value; }
 
     public PokemonType Type { get => type; set => type = value; }
-    public MoveCategory Category => category;
-    public CritBehavior CritBehavior { get => critBehavior;  set => critBehavior = value; }
-    public int Power => power;
+    public MoveCategory Category { get => category; set => category = value; }
+    public CritBehavior CritBehavior { get => critBehavior; set => critBehavior = value; }
+    public PowerBasedOn PowerBasedOn { get => powerBasedOn; set => powerBasedOn = value; }
+    public int Power { get => power; set => power = value; }
     public int Accuracy { get => accuracy; set => accuracy = value; }
-    public int PP => pp;
-    public int MaxPP => maxPP;
+    public int PP { get => pp; set => pp = value; }
+    public int MaxPP { get => maxPP; set => maxPP = value; }
 
-    public bool AlwaysHits => alwaysHits;
-    public int Priority => priority;
+    public bool AlwaysHits {
+        get => alwaysHits; set => alwaysHits = value;
+    }
+    public int Priority {
+        get => priority; set => priority = value;
+    }
 
-    public MoveEffects Effects => effects;
-    public List<SecondaryEffects> Secondaries => secondaries;
-    public RecoilMoveEffect Recoil => recoil;
-    public HealType HealType => healType;
-    public MoveTarget Target => target;
-    public List<MoveFlag> Flags => flags;
-    public AudioClip Sound => sound;
+    public MoveEffects Effects {
+        get => effects; set => effects = value;
+    }
+    public List<SecondaryEffects> Secondaries {
+        get => secondaries; set => secondaries = value;
+    }
+    public RecoilMoveEffect Recoil {
+        get => recoil; set => recoil = value;
+    }
+    public HealType HealType {
+        get => healType; set => healType = value;
+    }
+    public MoveTarget Target {
+        get => target; set => target = value;
+    }
+    public List<MoveFlag> Flags {
+        get => flags; set => flags = value;
+    }
+    public AudioClip Sound {
+        get => sound; set => sound = value;
+    }
 
     public int GetHitCount()
     {
-        if (hitRange == Vector2.zero)
-                return 1;
+        if (hitRange == Vector2.zero) return 1;
 
         int hitCount = 1;
         if (hitRange.y == 0)
@@ -101,10 +124,18 @@ public class MoveEffects : EffectData
     [SerializeField] ConditionID volatileStatus;
     [SerializeField] ConditionID weather;
 
-    public List<StatBoost> Boosts => boosts;
-    public ConditionID Status => status;
-    public ConditionID VolatileStatus => volatileStatus;
-    public ConditionID Weather => weather;
+    public List<StatBoost> Boosts {
+        get => boosts; set => boosts = value;
+    }
+    public ConditionID Status {
+        get => status; set => status = value;
+    }
+    public ConditionID VolatileStatus {
+        get => volatileStatus; set => volatileStatus = value;
+    }
+    public ConditionID Weather {
+        get => weather; set => weather = value;
+    }
 }
 
 [System.Serializable]
@@ -113,15 +144,12 @@ public class SecondaryEffects : MoveEffects
     [SerializeField] int chance;
     [SerializeField] MoveTarget target;
 
-    public int Chance => chance;
-    public MoveTarget Target => target;
-}
-
-[System.Serializable]
-public class BreedingMoves
-{
-    [SerializeField] MoveBase move;
-    [SerializeField] List<MoveParent> parent;
+    public int Chance {
+        get => chance; set => chance = value;
+    }
+    public MoveTarget Target {
+        get => target; set => target = value;
+    }
 }
 
 [System.Serializable]
@@ -129,9 +157,15 @@ public class StatBoost
 {
     public Stat stat;
     public int boost;
-    public Stat Stat => stat;
-    public int Boost => boost;
+    public Stat Stat {
+        get => stat; set => stat = value;
+    }
+    public int Boost {
+        get => boost; set => boost = value;
+    }
 }
+
+public enum PowerBasedOn { value, targetWeight, weightDiff, positiveStatusCount, consecutiveMoveUse }
 
 public enum MoveCategory { Physical, Special, Status }
 

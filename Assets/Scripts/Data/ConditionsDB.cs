@@ -18,7 +18,7 @@ public class ConditionsDB
     public static Dictionary<ConditionID, Condition> Conditions { get; set; } = new Dictionary<ConditionID, Condition>()
     {
         {
-            ConditionID.psn,
+            ConditionID.poison,
             new Condition()
             {
                 Name = "Poison",
@@ -31,7 +31,7 @@ public class ConditionsDB
             }
         },
         {
-            ConditionID.brn,
+            ConditionID.burn,
             new Condition()
             {
                 Name = "Burn",
@@ -44,7 +44,7 @@ public class ConditionsDB
             }
         },
         {
-            ConditionID.par,
+            ConditionID.paralysis,
             new Condition()
             {
                 Name = "Paralyzed",
@@ -68,7 +68,7 @@ public class ConditionsDB
             }
         },
         {
-            ConditionID.frz,
+            ConditionID.freeze,
             new Condition()
             {
                 Name = "Frozen",
@@ -87,7 +87,7 @@ public class ConditionsDB
             }
         },
         {
-            ConditionID.slp,
+            ConditionID.sleep,
             new Condition()
             {
                 Name = "Sleep",
@@ -378,9 +378,9 @@ public class ConditionsDB
     {
         if (condition == null)
             return 1f;
-        else if (condition.Id == ConditionID.slp || condition.Id == ConditionID.frz)
+        else if (condition.Id == ConditionID.sleep || condition.Id == ConditionID.freeze)
             return 2f;
-        else if (condition.Id == ConditionID.par || condition.Id == ConditionID.psn || condition.Id == ConditionID.brn)
+        else if (condition.Id == ConditionID.paralysis || condition.Id == ConditionID.poison || condition.Id == ConditionID.burn)
             return 1.5f;
 
         return 1f;
@@ -389,7 +389,9 @@ public class ConditionsDB
 
 public enum ConditionID
 {
-    none, psn, brn, slp, par, frz,
+    none, poison, burn, sleep, paralysis, freeze,
     confusion, seeded, substitute, ability_change, sand_tomb, focus_energy, wrap,
-    sunny, rain, sandstorm, trapped, infatuation, flinch, taunt
+    sunny, rain, sandstorm, trapped, infatuation, flinch, taunt,
+    yawn, trap, disable, leech_seed, unknown, nightmare, no_type_immunity, perish_song,
+    torment, ingrain, embargo, heal_block, silence, tar_shot,
 }
